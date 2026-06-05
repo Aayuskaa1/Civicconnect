@@ -8,7 +8,7 @@ part of 'report_hive_model.dart';
 
 class ReportHiveModelAdapter extends TypeAdapter<ReportHiveModel> {
   @override
-  final int typeId = 7;
+  final int typeId = 1;
 
   @override
   ReportHiveModel read(BinaryReader reader) {

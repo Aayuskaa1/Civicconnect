@@ -1,54 +1,71 @@
-import 'package:civic_connect/features/auth/presentation/pages/login_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class OnboardingView extends StatefulWidget {
-  const OnboardingView({super.key});
+class OnboardingPage extends ConsumerStatefulWidget {
+  const OnboardingPage({super.key});
 
   @override
-  State<OnboardingView> createState() => _OnboardingViewState();
+  ConsumerState<OnboardingPage> createState() => _OnboardingPageState();
 }
 
-class _OnboardingPage {
-  final Widget visual;
+class _OnboardingSlide {
+  final IconData icon;
+  final String label;
+  final Color badgeColor;
   final String title;
   final String description;
 
-  const _OnboardingPage({
-    required this.visual,
+  const _OnboardingSlide({
+    required this.icon,
+    required this.label,
+    required this.badgeColor,
     required this.title,
     required this.description,
   });
 }
 
-class _OnboardingViewState extends State<OnboardingView> {
+class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   final PageController _controller = PageController();
   int _index = 0;
 
-  // --- VIBRANT PALETTE ---
-  final Color primaryNavy = const Color(0xFF0F172A); 
-  final Color electricIndigo = const Color(0xFF6366F1); 
-  final Color accentBlue = const Color(0xFF38BDF8); 
-  final Color successGreen = const Color(0xFF10B981); 
+  final Color primaryNavy = const Color(0xFF0F172A);
+  final Color electricIndigo = const Color(0xFF6366F1);
+  final Color accentBlue = const Color(0xFF38BDF8);
+  final Color successGreen = const Color(0xFF10B981);
 
-  late final List<_OnboardingPage> _pages = [
-    _OnboardingPage(
-      visual: _buildVisualBadge(Icons.add_task_rounded, label: "NEW TICKET", badgeColor: electricIndigo),
+  late final List<_OnboardingSlide> _slides = [
+    _OnboardingSlide(
+      icon: Icons.add_task_rounded,
+      label: 'NEW TICKET',
+      badgeColor: electricIndigo,
       title: 'Report Issues',
       description: 'Snap a photo of potholes or broken lights. Start a service request in seconds.',
     ),
-    _OnboardingPage(
-      visual: _buildVisualBadge(Icons.insights_rounded, label: "IN PROGRESS", badgeColor: accentBlue),
+    _OnboardingSlide(
+      icon: Icons.insights_rounded,
+      label: 'IN PROGRESS',
+      badgeColor: accentBlue,
       title: 'Track Progress',
       description: 'Get real-time status updates as city staff reviews and assigns your tickets.',
     ),
-    _OnboardingPage(
-      visual: _buildVisualBadge(Icons.how_to_reg_rounded, label: "RESOLVED", badgeColor: successGreen),
+    _OnboardingSlide(
+      icon: Icons.how_to_reg_rounded,
+      label: 'RESOLVED',
+      badgeColor: successGreen,
       title: 'Civic Impact',
       description: 'See the difference you make. Join thousands building a better community.',
     ),
   ];
 
-  Widget _buildVisualBadge(IconData icon, {required String label, required Color badgeColor}) {
+  void _goToLogin() => Navigator.pushReplacementNamed(context, '/login');
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Widget _buildVisual(_OnboardingSlide slide) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -60,26 +77,26 @@ class _OnboardingViewState extends State<OnboardingView> {
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: badgeColor.withValues(alpha: 0.15),
+                color: slide.badgeColor.withValues(alpha: 0.15),
                 blurRadius: 40,
                 offset: const Offset(0, 20),
               ),
             ],
           ),
-          child: Icon(icon, size: 80, color: badgeColor),
+          child: Icon(slide.icon, size: 80, color: slide.badgeColor),
         ),
         const SizedBox(height: 24),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           decoration: BoxDecoration(
-            color: badgeColor.withValues(alpha: 0.1),
+            color: slide.badgeColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: badgeColor.withValues(alpha: 0.2)),
+            border: Border.all(color: slide.badgeColor.withValues(alpha: 0.2)),
           ),
           child: Text(
-            label,
+            slide.label,
             style: TextStyle(
-              color: badgeColor,
+              color: slide.badgeColor,
               fontSize: 12,
               fontWeight: FontWeight.w900,
               letterSpacing: 1.2,
@@ -90,26 +107,9 @@ class _OnboardingViewState extends State<OnboardingView> {
     );
   }
 
-  void _goToLogin() {
-    Navigator.pushReplacement(
-      context,
-      PageRouteBuilder(
-        transitionDuration: const Duration(milliseconds: 500),
-        pageBuilder: (context, anim, secAnim) => const LoginPage(),
-        transitionsBuilder: (context, anim, secAnim, child) => FadeTransition(opacity: anim, child: child),
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
-    final isLast = _index == _pages.length - 1;
+    final isLast = _index == _slides.length - 1;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -122,37 +122,44 @@ class _OnboardingViewState extends State<OnboardingView> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    "CIVIC CONNECT",
+                    'CIVIC CONNECT',
                     style: TextStyle(
-                      fontWeight: FontWeight.w900, 
-                      fontSize: 14, 
+                      fontWeight: FontWeight.w900,
+                      fontSize: 14,
                       color: primaryNavy,
-                      letterSpacing: -0.5
+                      letterSpacing: -0.5,
                     ),
                   ),
                   TextButton(
                     onPressed: _goToLogin,
-                    child: Text('SKIP', style: TextStyle(color: electricIndigo, fontWeight: FontWeight.bold, fontSize: 13)),
+                    child: Text(
+                      'SKIP',
+                      style: TextStyle(
+                        color: electricIndigo,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
-
             Expanded(
               child: PageView.builder(
                 controller: _controller,
                 onPageChanged: (i) => setState(() => _index = i),
-                itemCount: _pages.length,
+                itemCount: _slides.length,
                 itemBuilder: (context, i) {
+                  final slide = _slides[i];
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 40),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        _pages[i].visual,
+                        _buildVisual(slide),
                         const SizedBox(height: 50),
                         Text(
-                          _pages[i].title,
+                          slide.title,
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 36,
@@ -163,13 +170,13 @@ class _OnboardingViewState extends State<OnboardingView> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          _pages[i].description,
+                          slide.description,
                           textAlign: TextAlign.center,
                           style: const TextStyle(
-                            fontSize: 16, 
-                            color: Color(0xFF475569), 
+                            fontSize: 16,
+                            color: Color(0xFF475569),
                             height: 1.6,
-                            fontWeight: FontWeight.w500
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
@@ -178,39 +185,41 @@ class _OnboardingViewState extends State<OnboardingView> {
                 },
               ),
             ),
-
             Padding(
               padding: const EdgeInsets.fromLTRB(30, 0, 30, 40),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Pagination Dots
                   Row(
-                    children: List.generate(_pages.length, (i) => AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      margin: const EdgeInsets.only(right: 8),
-                      height: 8,
-                      width: i == _index ? 32 : 8,
-                      decoration: BoxDecoration(
-                        color: i == _index ? electricIndigo : const Color(0xFFCBD5E1),
-                        borderRadius: BorderRadius.circular(4),
+                    children: List.generate(
+                      _slides.length,
+                      (i) => AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        margin: const EdgeInsets.only(right: 8),
+                        height: 8,
+                        width: i == _index ? 32 : 8,
+                        decoration: BoxDecoration(
+                          color: i == _index ? electricIndigo : const Color(0xFFCBD5E1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
                       ),
-                    )),
+                    ),
                   ),
-
-                  // Updated Action Button
                   GestureDetector(
                     onTap: () {
                       if (isLast) {
                         _goToLogin();
                       } else {
-                        _controller.nextPage(duration: const Duration(milliseconds: 500), curve: Curves.easeOutCubic);
+                        _controller.nextPage(
+                          duration: const Duration(milliseconds: 500),
+                          curve: Curves.easeOutCubic,
+                        );
                       }
                     },
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 300),
                       height: 64,
-                      width: isLast ? 200 : 64, // Increased width for "GET STARTED"
+                      width: isLast ? 200 : 64,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [electricIndigo, primaryNavy],
@@ -223,20 +232,20 @@ class _OnboardingViewState extends State<OnboardingView> {
                             color: electricIndigo.withValues(alpha: 0.4),
                             blurRadius: 15,
                             offset: const Offset(0, 6),
-                          )
-                        ]
+                          ),
+                        ],
                       ),
                       child: Center(
                         child: isLast
-                          ? const Text(
-                              "GET STARTED", 
-                              style: TextStyle(
-                                color: Colors.white, 
-                                fontWeight: FontWeight.w900, 
-                                letterSpacing: 1.2
+                            ? const Text(
+                                'GET STARTED',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 1.2,
+                                ),
                               )
-                            )
-                          : const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 28),
+                            : const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 28),
                       ),
                     ),
                   ),

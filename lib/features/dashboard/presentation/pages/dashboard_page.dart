@@ -1,95 +1,83 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/dashboard_notifier.dart';
+import 'package:civic_connect/features/auth/presentation/view_model/auth_view_model.dart';
+import 'package:civic_connect/features/dashboard/presentation/pages/explore_page.dart';
+import 'package:civic_connect/features/dashboard/presentation/pages/home_page.dart';
+import 'package:civic_connect/features/dashboard/presentation/pages/notifications_page.dart';
+import 'package:civic_connect/features/dashboard/presentation/pages/profile_page.dart';
+import 'package:civic_connect/features/dashboard/presentation/pages/report_page.dart';
+import 'package:civic_connect/features/dashboard/presentation/view_model/dashboard_view_model.dart';
 
-class DashboardScreen extends ConsumerWidget {
-  const DashboardScreen({super.key});
+class DashboardPage extends ConsumerStatefulWidget {
+  const DashboardPage({super.key});
 
-  // Pastel Palette Constants
+  @override
+  ConsumerState<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends ConsumerState<DashboardPage> {
   static const Color pastelIndigo = Color(0xFFE0E7FF);
   static const Color textDeep = Color(0xFF4338CA);
 
+  static const _pages = [
+    HomePage(),
+    ExplorePage(),
+    ReportPage(),
+    NotificationsPage(),
+    ProfilePage(),
+  ];
+
+  static const _labels = ['Home', 'Explore', 'Report', 'Alerts', 'Profile'];
+
+  Future<void> _handleLogout() async {
+    final user = ref.read(authViewModelProvider).user;
+    if (user == null) return;
+    await ref.read(authViewModelProvider.notifier).logout(user.email);
+    if (!mounted) return;
+    Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
+  }
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final dashboardState = ref.watch(dashboardProvider);
+  Widget build(BuildContext context) {
+    final dashboardState = ref.watch(dashboardViewModelProvider);
+
+    ref.listen(authViewModelProvider, (previous, next) {
+      if (next.error != null && next.error!.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(next.error!)),
+        );
+      }
+    });
 
     return Scaffold(
-      body: IndexedStack(
-        index: dashboardState.currentScreenIndex,
-        children: dashboardState.lstBottomScreens,
+      appBar: AppBar(
+        title: Text(_labels[dashboardState.currentIndex]),
+        backgroundColor: pastelIndigo,
+        foregroundColor: textDeep,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: _handleLogout,
+            tooltip: 'Logout',
+          ),
+        ],
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 20,
-              offset: const Offset(0, -4),
-            ),
-          ],
-        ),
-        child: NavigationBarTheme(
-          data: NavigationBarThemeData(
-            backgroundColor: Colors.white, // Clean white base
-            indicatorColor: pastelIndigo, // Soft pastel pill
-            labelTextStyle: WidgetStateProperty.resolveWith((states) {
-              if (states.contains(WidgetState.selected)) {
-                return const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: textDeep, // Harmonized active text
-                );
-              }
-              return TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-                color: textDeep.withValues(alpha: 0.5), // Harmonized inactive text
-              );
-            }),
-            iconTheme: WidgetStateProperty.resolveWith((states) {
-              if (states.contains(WidgetState.selected)) {
-                return const IconThemeData(
-                  color: textDeep,
-                  size: 24,
-                );
-              }
-              return IconThemeData(
-                color: textDeep.withValues(alpha: 0.5),
-                size: 22,
-              );
-            }),
-          ),
-          child: NavigationBar(
-            selectedIndex: dashboardState.currentScreenIndex,
-            elevation: 0,
-            height: 70,
-            onDestinationSelected: (int index) {
-              ref.read(dashboardProvider.notifier).updateIndex(index);
-            },
-            destinations: const [
-              NavigationDestination(
-                icon: Icon(Icons.home_outlined),
-                selectedIcon: Icon(Icons.home),
-                label: 'Home',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.assignment_outlined),
-                selectedIcon: Icon(Icons.assignment),
-                label: 'File Item',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.analytics_outlined),
-                selectedIcon: Icon(Icons.analytics),
-                label: 'Status',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.person_outline),
-                selectedIcon: Icon(Icons.person),
-                label: 'Profile',
-              ),
-            ],
-          ),
-        ),
+      body: IndexedStack(
+        index: dashboardState.currentIndex,
+        children: _pages,
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: dashboardState.currentIndex,
+        onDestinationSelected: (index) {
+          ref.read(dashboardViewModelProvider.notifier).updateIndex(index);
+        },
+        destinations: const [
+          NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
+          NavigationDestination(icon: Icon(Icons.explore_outlined), selectedIcon: Icon(Icons.explore), label: 'Explore'),
+          NavigationDestination(icon: Icon(Icons.report_outlined), selectedIcon: Icon(Icons.report), label: 'Report'),
+          NavigationDestination(icon: Icon(Icons.notifications_outlined), selectedIcon: Icon(Icons.notifications), label: 'Alerts'),
+          NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
+        ],
       ),
     );
   }

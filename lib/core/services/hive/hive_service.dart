@@ -1,96 +1,88 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive/hive.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:civic_connect/core/constants/hive_table_constant.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:civic_connect/features/auth/data/models/auth_hive_model.dart';
 import 'package:civic_connect/features/report/data/models/report_hive_model.dart';
-
-final hiveServiceProvider = Provider<HiveService>((ref) {
-  return HiveService();
-});
+import 'package:civic_connect/features/complaint/data/models/complaint_hive_model.dart';
 
 class HiveService {
-  // Init
+  static const String _authBox = 'auth_box';
+  static const String _reportBox = 'report_box';
+  static const String _complaintBox = 'complaint_box';
+  static const String _sessionKey = 'current_session';
+
   Future<void> init() async {
-    final directory = await getApplicationDocumentsDirectory();
-    Hive.init(directory.path);
-    _registerAdapter();
-    await openBoxes();
+    await Hive.initFlutter();
+    Hive.registerAdapter(AuthHiveModelAdapter());
+    Hive.registerAdapter(ReportHiveModelAdapter());
+    Hive.registerAdapter(ComplaintHiveModelAdapter());
+    await Hive.openBox<AuthHiveModel>(_authBox);
+    await Hive.openBox<ReportHiveModel>(_reportBox);
+    await Hive.openBox<ComplaintHiveModel>(_complaintBox);
+    await Hive.openBox<String>('session_box');
   }
 
-  // Register Adapters
-  void _registerAdapter() {
-    if (!Hive.isAdapterRegistered(HelpDeskTableConstant.reportTypeId)) {
-      Hive.registerAdapter(ReportHiveModelAdapter());
-    }
-    if (!Hive.isAdapterRegistered(HelpDeskTableConstant.userTypeId)) {
-      Hive.registerAdapter(AuthHiveModelAdapter());
-    }
-  }
-
-  // Open Boxes
-  Future<void> openBoxes() async {
-    await Hive.openBox<ReportHiveModel>(HelpDeskTableConstant.reportTable);
-    await Hive.openBox<AuthHiveModel>(HelpDeskTableConstant.userTable);
-  }
-
-  // Close Boxes
-  Future<void> close() async {
-    await Hive.close();
-  }
-
-  // --- Report Operations ---
-  Box<ReportHiveModel> get _reportBox =>
-      Hive.box<ReportHiveModel>(HelpDeskTableConstant.reportTable);
-
-  Future<void> createReport(ReportHiveModel model) async {
-    await _reportBox.put(model.reportId, model);
-  }
-
-  // ADDED: Missing method needed by your DataSource
-  ReportHiveModel? getReportById(String reportId) {
-    return _reportBox.get(reportId);
-  }
-
-  List<ReportHiveModel> getAllReports() {
-    return _reportBox.values.toList();
-  }
-
-  Future<void> updateReport(ReportHiveModel model) async {
-    await _reportBox.put(model.reportId, model);
-  }
-
-  Future<void> deleteReport(String reportId) async {
-    await _reportBox.delete(reportId);
-  }
+  Box<AuthHiveModel> get _authHiveBox => Hive.box<AuthHiveModel>(_authBox);
+  Box<ReportHiveModel> get _reportHiveBox => Hive.box<ReportHiveModel>(_reportBox);
+  Box<ComplaintHiveModel> get _complaintHiveBox => Hive.box<ComplaintHiveModel>(_complaintBox);
+  Box<String> get _sessionBox => Hive.box<String>('session_box');
 
   // --- Auth Operations ---
-  Box<AuthHiveModel> get _authBox =>
-      Hive.box<AuthHiveModel>(HelpDeskTableConstant.userTable);
+  Future<void> registerUser(AuthHiveModel user) async => await _authHiveBox.put(user.email, user);
 
-  Future<AuthHiveModel> registerUser(AuthHiveModel model) async {
-    await _authBox.put(model.authId, model);
-    return model;
-  }
+  AuthHiveModel? getUser(String email) => _authHiveBox.get(email);
 
-  // UPDATED: Included password check for security
+  Future<void> deleteUser(String email) async => await _authHiveBox.delete(email);
+
+  List<AuthHiveModel> getAllUsers() => _authHiveBox.values.toList();
+
   Future<AuthHiveModel?> loginUser(String email, String password) async {
-    final users = _authBox.values.where(
-      (user) => user.email == email && user.password == password,
-    );
-    return users.isNotEmpty ? users.first : null;
+    final user = _authHiveBox.get(email);
+    if (user != null && user.password == password) {
+      await _sessionBox.put(_sessionKey, email);
+      return user;
+    }
+    return null;
   }
 
-  Future<void> logoutUser(String authId) async {
-    await _authBox.delete(authId);
-  }
+  Future<void> clearSession() async => await _sessionBox.delete(_sessionKey);
 
-  Future<bool> isEmailExists(String email) async {
-    return _authBox.values.any((user) => user.email == email);
-  }
+  String? getCurrentSessionEmail() => _sessionBox.get(_sessionKey);
 
   AuthHiveModel? getCurrentUser() {
-    final users = _authBox.values;
-    return users.isNotEmpty ? users.first : null;
+    final email = getCurrentSessionEmail();
+    if (email == null) return null;
+    return _authHiveBox.get(email);
   }
+
+  bool isEmailExists(String email) => _authHiveBox.containsKey(email);
+
+  // --- Report Operations ---
+  Future<void> createReport(ReportHiveModel model) async =>
+      await _reportHiveBox.put(model.reportId, model);
+
+  ReportHiveModel? getReportById(String reportId) => _reportHiveBox.get(reportId);
+
+  List<ReportHiveModel> getAllReports() => _reportHiveBox.values.toList();
+
+  Future<void> updateReport(ReportHiveModel model) async =>
+      await _reportHiveBox.put(model.reportId, model);
+
+  Future<void> deleteReport(String reportId) async => await _reportHiveBox.delete(reportId);
+
+  // --- Complaint Operations ---
+  Future<void> createComplaint(ComplaintHiveModel model) async =>
+      await _complaintHiveBox.put(model.complaintId, model);
+
+  ComplaintHiveModel? getComplaintById(String complaintId) =>
+      _complaintHiveBox.get(complaintId);
+
+  List<ComplaintHiveModel> getAllComplaints() => _complaintHiveBox.values.toList();
+
+  List<ComplaintHiveModel> getComplaintsByUser(String userEmail) =>
+      _complaintHiveBox.values.where((c) => c.userEmail == userEmail).toList();
+
+  Future<void> updateComplaint(ComplaintHiveModel model) async =>
+      await _complaintHiveBox.put(model.complaintId, model);
+
+  Future<void> deleteComplaint(String complaintId) async =>
+      await _complaintHiveBox.delete(complaintId);
 }
