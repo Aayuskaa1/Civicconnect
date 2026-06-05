@@ -3,11 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() {
+  // Ensure Flutter bindings are initialized before calling native code (if needed)
+  WidgetsFlutterBinding.ensureInitialized();
+  
   runApp(
-    // ProviderScope stores the state of all Riverpod providers
     const ProviderScope(
-      child: App(),
+      child: MyApp(),
     ),
   );
 }
-

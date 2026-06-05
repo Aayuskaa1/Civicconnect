@@ -95,7 +95,7 @@ class _OnboardingViewState extends State<OnboardingView> {
       context,
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 500),
-        pageBuilder: (context, anim, secAnim) => const LoginView(),
+        pageBuilder: (context, anim, secAnim) => const LoginPage(),
         transitionsBuilder: (context, anim, secAnim, child) => FadeTransition(opacity: anim, child: child),
       ),
     );

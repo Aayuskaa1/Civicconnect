@@ -1,146 +1,161 @@
-import 'package:civic_connect/app/routes/app_routes.dart';
-import 'package:civic_connect/features/dashboard/presentation/pages/dashboard_page.dart';
-import 'package:civic_connect/features/auth/presentation/pages/signup_page.dart';
+import 'package:civic_connect/core/utils/snackbar_utilis.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
-class LoginView extends StatefulWidget {
-  const LoginView({super.key});
+import '../../../../app/routes/app_routes.dart';
+import '../../../../app/theme/app_colors.dart';
+import '../../data/datasources/local/auth_local_datasource.dart';
+import '../../../dashboard/presentation/pages/dashboard_page.dart';
+import 'signup_page.dart';
+
+class LoginPage extends ConsumerStatefulWidget {
+  const LoginPage({super.key});
 
   @override
-  State<LoginView> createState() => _LoginViewState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginViewState extends State<LoginView> {
-  // Pastel Palette Constants
-  static const Color pastelIndigo = Color(0xFFE0E7FF);
-  static const Color pastelViolet = Color(0xFFEDE9FE);
-  static const Color textDeep = Color(0xFF4338CA);
-
+class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final _usernameCtrl = TextEditingController();
-  final _passwordCtrl = TextEditingController();
-  bool _obscure = true;
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  bool _obscurePassword = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
-    _usernameCtrl.dispose();
-    _passwordCtrl.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
-  void _login() {
-    if (_formKey.currentState?.validate() ?? false) {
-      AppRoutes.pushReplacement(context, const DashboardScreen());
+  Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    try {
+      // Accessing the local datasource to verify Hive storage
+      final authDatasource = ref.read(authLocalDatasourceProvider);
+      final user = await authDatasource.login(email, password);
+
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      if (user != null) {
+        SnackbarUtils.showSuccess(context, 'Login successful. Welcome to Civic Connect!');
+        AppRoutes.pushReplacement(context, const DashboardScreen());
+      } else {
+        SnackbarUtils.showError(context, 'Invalid email or password');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      SnackbarUtils.showError(context, 'Login failed: ${e.toString()}');
     }
   }
 
+  void _navigateToSignup() => AppRoutes.push(context, const SignupPage());
+
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final textColor = Theme.of(context).textTheme.bodyLarge?.color ?? AppColors.textDark;
+    final secondaryTextColor = Theme.of(context).textTheme.bodySmall?.color ?? AppColors.textMuted;
+
     return Scaffold(
-      backgroundColor: pastelViolet, // Global Palette Background
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Logo Container
-                  Container(
-                    height: 100,
-                    width: 100,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: const Icon(Icons.hub_outlined, size: 48, color: textDeep),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Civic Connect',
-                    style: TextStyle(
-                      color: textDeep,
-                      fontSize: 32,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -0.5,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 40),
+
+                // Civic Connect Logo
+                Center(
+                  child: SvgPicture.asset(
+                    'assets/svg/civic_connect_logo.svg', // Ensure this path is correct
+                    width: 200,
+                    height: 70,
+                    colorFilter: ColorFilter.mode(
+                      isDarkMode ? AppColors.darkTextPrimary : AppColors.primary,
+                      BlendMode.srcIn,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Welcome back. Please log in.',
-                    style: TextStyle(fontSize: 16, color: textDeep.withValues(alpha: 0.6)),
-                  ),
-                  const SizedBox(height: 48),
-                  
-                  // Login Box
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: pastelIndigo),
-                    ),
-                    child: Column(
-                      children: [
-                        TextFormField(
-                          controller: _usernameCtrl,
-                          decoration: _inputDecoration('Username', Icons.person_outline),
-                          validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
-                        ),
-                        const Divider(color: pastelIndigo),
-                        TextFormField(
-                          controller: _passwordCtrl,
-                          obscureText: _obscure,
-                          decoration: _inputDecoration('Password', Icons.lock_outline).copyWith(
-                            suffixIcon: IconButton(
-                              icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined, size: 18, color: textDeep),
-                              onPressed: () => setState(() => _obscure = !_obscure),
-                            ),
-                          ),
-                          validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
-                        ),
-                      ],
+                ),
+
+                const SizedBox(height: 32),
+                Text('Welcome Back!', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: textColor)),
+                const SizedBox(height: 8),
+                Text('Sign in to your Civic Connect account', style: TextStyle(fontSize: 16, color: secondaryTextColor)),
+
+                const SizedBox(height: 40),
+
+                // Email Field
+                TextFormField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email_outlined)),
+                  validator: (value) => (value == null || !value.contains('@')) ? 'Enter a valid email' : null,
+                ),
+
+                const SizedBox(height: 16),
+
+                // Password Field
+                TextFormField(
+                  controller: _passwordController,
+                  obscureText: _obscurePassword,
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(_obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                     ),
                   ),
-                  const SizedBox(height: 32),
-                  
-                  // Login Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: _login,
-                      style: FilledButton.styleFrom(
-                        backgroundColor: textDeep,
-                        padding: const EdgeInsets.symmetric(vertical: 20),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      ),
-                      child: const Text('CONTINUE', style: TextStyle(fontWeight: FontWeight.bold)),
+                  validator: (value) => (value == null || value.length < 6) ? 'Password must be at least 6 characters' : null,
+                ),
+
+                const SizedBox(height: 24),
+
+                // Login Button
+                SizedBox(
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _handleLogin,
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.authPrimary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                    child: _isLoading 
+                      ? const CircularProgressIndicator(color: Colors.white) 
+                      : const Text('Login', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Sign up navigation
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text("Don't have an account? ", style: TextStyle(color: secondaryTextColor)),
+                    TextButton(
+                      onPressed: _navigateToSignup,
+                      child: Text('Sign Up', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
                     ),
-                  ),
-                  
-                  const SizedBox(height: 24),
-                  TextButton(
-                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SignupView())),
-                    child: const Text("Don't have an account? Sign Up", style: TextStyle(color: textDeep, fontWeight: FontWeight.bold)),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+              ],
             ),
           ),
         ),
       ),
-    );
-  }
-
-  InputDecoration _inputDecoration(String label, IconData icon) {
-    return InputDecoration(
-      labelText: label,
-      labelStyle: const TextStyle(fontSize: 14, color: textDeep),
-      prefixIcon: Icon(icon, size: 20, color: textDeep),
-      border: InputBorder.none,
-      contentPadding: const EdgeInsets.symmetric(vertical: 12),
     );
   }
 }
