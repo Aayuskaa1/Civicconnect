@@ -1,0 +1,14 @@
+{
+  "name": "civicconnect-monorepo",
+  "version": "1.0.0",
+  "description": "CivicConnect workspace",
+  "scripts": {
+    "dev": "npm run dev:all",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && flutter run",
+    "dev:all": "npx concurrently \"npm run dev:backend\" \"npm run dev:frontend\""
+  },
+  "dependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
