@@ -1,24 +1,28 @@
-import 'package:civic_connect/core/services/hive/hive_service.dart';
+import 'package:civic_connect/core/services/hive/hive_services.dart';
 import 'package:civic_connect/features/auth/data/datasources/auth_datasource.dart';
 import 'package:civic_connect/features/auth/data/models/auth_hive_model.dart';
 
-class AuthLocalDatasource implements IAuthDataSource {
-  final HiveService _hiveService;
+class AuthLocalDatasourceImpl implements AuthLocalDatasource {
+  final HiveServices _hiveServices;
 
-  const AuthLocalDatasource({required HiveService hiveService}) : _hiveService = hiveService;
+  AuthLocalDatasourceImpl(this._hiveServices);
 
   @override
-  Future<bool> register(AuthHiveModel model) async {
-    if (_hiveService.isEmailExists(model.email)) {
+  Future<void> register(AuthHiveModel user) async {
+    if (_hiveServices.isEmailExists(user.email)) {
       throw Exception('Email already registered');
     }
-    await _hiveService.registerUser(model);
-    return true;
+    await _hiveServices.registerUser(user);
+  }
+
+  @override
+  Future<void> updateUser(AuthHiveModel user) async {
+    await _hiveServices.registerUser(user);
   }
 
   @override
   Future<AuthHiveModel?> login(String email, String password) async {
-    final user = await _hiveService.loginUser(email, password);
+    final user = await _hiveServices.loginUser(email, password);
     if (user == null) {
       throw Exception('Invalid email or password');
     }
@@ -27,20 +31,16 @@ class AuthLocalDatasource implements IAuthDataSource {
 
   @override
   Future<AuthHiveModel?> getCurrentUser() async {
-    final user = _hiveService.getCurrentUser();
-    if (user == null) {
-      throw Exception('No active session');
-    }
-    return user;
+    return _hiveServices.getCurrentUser();
   }
 
   @override
-  Future<void> logout(String email) async {
-    await _hiveService.clearSession();
+  Future<void> logout() async {
+    await _hiveServices.logoutUser();
   }
 
   @override
   Future<bool> isEmailExists(String email) async {
-    return _hiveService.isEmailExists(email);
+    return _hiveServices.isEmailExists(email);
   }
 }

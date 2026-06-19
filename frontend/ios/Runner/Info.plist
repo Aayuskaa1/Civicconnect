@@ -26,6 +26,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Allow CivicConnect to take photos for issue reports and profile updates.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Allow CivicConnect to choose photos for issue reports and profile updates.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

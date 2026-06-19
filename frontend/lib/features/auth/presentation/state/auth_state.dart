@@ -1,28 +1,33 @@
 import 'package:civic_connect/features/auth/domain/entities/auth_entity.dart';
 
+enum AuthStatus { initial, loading, authenticated, registered, error }
+
+const Object _authStateUnset = Object();
+
 class AuthState {
-  final bool isLoading;
-  final bool isSuccess;
+  final AuthStatus status;
+  final String? errorMessage;
   final AuthEntity? user;
-  final String? error;
 
   const AuthState({
-    this.isLoading = false,
-    this.isSuccess = false,
+    required this.status,
+    this.errorMessage,
     this.user,
-    this.error,
   });
 
+  factory AuthState.initial() => const AuthState(status: AuthStatus.initial);
+
   AuthState copyWith({
-    bool? isLoading,
-    bool? isSuccess,
+    AuthStatus? status,
+    Object? errorMessage = _authStateUnset,
     AuthEntity? user,
-    String? error,
-  }) =>
-      AuthState(
-        isLoading: isLoading ?? this.isLoading,
-        isSuccess: isSuccess ?? this.isSuccess,
-        user: user ?? this.user,
-        error: error,
-      );
+  }) {
+    return AuthState(
+      status: status ?? this.status,
+      errorMessage: identical(errorMessage, _authStateUnset)
+          ? this.errorMessage
+          : errorMessage as String?,
+      user: user ?? this.user,
+    );
+  }
 }

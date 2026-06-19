@@ -1,40 +1,22 @@
 import 'package:equatable/equatable.dart';
 
 class AuthEntity extends Equatable {
-  final String userId;  
-  final String fullName;
+  final String authId;
   final String email;
-  final String? phoneNumber;
-  final String? userRole; 
-  final String username;
+  final String fullName;
+  final String? password;
   final String? profilePicture;
-  final String? department; 
-  final String password;    
-  final String report;    
+  final String? role;
 
   const AuthEntity({
-    required this.userId,
-    required this.fullName,
+    required this.authId,
     required this.email,
-    this.phoneNumber,
-    this.userRole,
-    required this.username,
+    required this.fullName,
+    this.password,
     this.profilePicture,
-    this.department,
-    required this.password,
-    required this.report,
+    this.role,
   });
-  bool get isOfficial => userRole?.toLowerCase() == 'official';
 
   @override
-  List<Object?> get props => [
-        userId,
-        fullName,
-        email,
-        phoneNumber,
-        userRole,
-        username,
-        profilePicture,
-        department,
-      ];
+  List<Object?> get props => [authId, email, fullName, password, profilePicture, role];
 }

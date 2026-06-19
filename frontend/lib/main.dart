@@ -1,17 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:civic_connect/app.dart';
-import 'package:civic_connect/core/services/hive/hive_service.dart';
-import 'package:civic_connect/features/auth/presentation/view_model/auth_view_model.dart';
+import 'package:civic_connect/core/providers/shared_prefs_provider.dart';
+import 'package:civic_connect/core/services/hive/hive_services.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final hiveService = HiveService();
-  await hiveService.init();
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(statusBarColor: Colors.transparent),
+  );
+  
+  final hiveServices = HiveServices();
+  await hiveServices.init();
+  
+  final sharedPreferences = await SharedPreferences.getInstance();
+  
   runApp(
     ProviderScope(
       overrides: [
-        hiveServiceProvider.overrideWithValue(hiveService),
+        sharedPreferencesProvider.overrideWithValue(sharedPreferences),
       ],
       child: const App(),
     ),

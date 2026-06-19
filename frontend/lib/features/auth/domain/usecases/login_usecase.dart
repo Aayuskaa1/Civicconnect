@@ -2,7 +2,7 @@ import 'package:dartz/dartz.dart';
 import 'package:civic_connect/core/error/failures.dart';
 import 'package:civic_connect/core/usecases/app_usecase.dart';
 import 'package:civic_connect/features/auth/domain/entities/auth_entity.dart';
-import 'package:civic_connect/features/auth/domain/repositories/i_auth_repository.dart';
+import 'package:civic_connect/features/auth/domain/repositories/auth_repository.dart';
 
 class LoginParams {
   final String email;
@@ -11,12 +11,13 @@ class LoginParams {
   const LoginParams({required this.email, required this.password});
 }
 
-class LoginUseCase implements UseCase<Either<Failure, AuthEntity>, LoginParams> {
-  final IAuthRepository _repository;
+class LoginUsecase implements UsecaseWithParams<AuthEntity, LoginParams> {
+  final AuthRepository _repository;
 
-  LoginUseCase(this._repository);
+  LoginUsecase(this._repository);
 
   @override
-  Future<Either<Failure, AuthEntity>> call(LoginParams params) =>
-      _repository.login(params.email, params.password);
+  Future<Either<Failure, AuthEntity>> call(LoginParams params) {
+    return _repository.login(params.email, params.password);
+  }
 }

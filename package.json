@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "npm run dev:all",
     "dev:backend": "cd backend && npm run dev",
-    "dev:frontend": "cd frontend && flutter run",
+    "dev:frontend": "cd frontend && bash scripts/setup_ios_build_dir.sh && flutter run",
     "dev:all": "npx concurrently \"npm run dev:backend\" \"npm run dev:frontend\""
   },
   "dependencies": {

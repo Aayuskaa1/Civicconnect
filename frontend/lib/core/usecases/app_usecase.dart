@@ -1,7 +1,10 @@
-abstract class UseCase<Type, Params> {
-  Future<Type> call(Params params);
+import 'package:dartz/dartz.dart';
+import 'package:civic_connect/core/error/failures.dart';
+
+abstract interface class UsecaseWithParams<SuccessType, Params> {
+  Future<Either<Failure, SuccessType>> call(Params params);
 }
 
-class NoParams {
-  const NoParams();
+abstract interface class UsecaseWithoutParams<SuccessType> {
+  Future<Either<Failure, SuccessType>> call();
 }
