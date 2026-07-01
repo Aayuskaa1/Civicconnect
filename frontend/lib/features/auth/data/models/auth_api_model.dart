@@ -7,6 +7,7 @@ class AuthApiModel {
   final String lastName;
   final String? role;
   final String? profilePicture;
+  final String? username;
 
   AuthApiModel({
     required this.id,
@@ -15,6 +16,7 @@ class AuthApiModel {
     required this.lastName,
     this.role,
     this.profilePicture,
+    this.username,
   });
 
   factory AuthApiModel.fromJson(Map<String, dynamic> json) {
@@ -25,6 +27,7 @@ class AuthApiModel {
       lastName: json['lastName'] as String? ?? '',
       role: json['role'] as String?,
       profilePicture: json['profilePicture'] as String?,
+      username: json['username'] as String?,
     );
   }
 
@@ -36,6 +39,7 @@ class AuthApiModel {
       'lastName': lastName,
       'role': role,
       'profilePicture': profilePicture,
+      'username': username,
     };
   }
 
@@ -44,6 +48,7 @@ class AuthApiModel {
       authId: id,
       email: email,
       fullName: '$firstName $lastName'.trim(),
+      username: username,
       role: role,
       profilePicture: profilePicture,
     );
@@ -60,6 +65,7 @@ class AuthApiModel {
       lastName: lName,
       role: entity.role,
       profilePicture: entity.profilePicture,
+      username: entity.username,
     );
   }
 }

@@ -154,6 +154,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ),
                 ),
               ),
+              if (user?.username != null && user!.username!.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Center(
+                  child: Text(
+                    '@${user.username}',
+                    style: const TextStyle(
+                      fontFamily: 'MontserratBold',
+                      fontSize: 14,
+                      color: MyTheme.accentOrange,
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 4),
               Center(
                 child: Text(
                   user?.email ?? 'email@example.com',

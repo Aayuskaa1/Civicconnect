@@ -5,7 +5,7 @@ class ApiEndpoints {
   ApiEndpoints._();
 
   static const String _androidBaseUrl = "http://10.0.2.2:3000/api/v1/";
-  static const String _iosBaseUrl = "http://localhost:3000/api/v1/";
+  static const String _iosBaseUrl = "http://192.168.1.74:3000/api/v1/";
 
   static String get baseUrl {
     if (kIsWeb) {

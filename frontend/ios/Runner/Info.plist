@@ -28,8 +28,15 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Allow CivicConnect to take photos for issue reports and profile updates.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Allow CivicConnect to connect to your local development server.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Allow CivicConnect to choose photos for issue reports and profile updates.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

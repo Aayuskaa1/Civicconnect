@@ -15,13 +15,19 @@ class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
       final firstName = names.isNotEmpty ? names.first : '';
       final lastName = names.length > 1 ? names.sublist(1).join(' ') : '.';
 
+      // Generate username automatically from full name, falling back to email prefix if empty
+      String username = entity.fullName.toLowerCase().replaceAll(RegExp(r'\s+'), '');
+      if (username.isEmpty) {
+        username = entity.email.split('@').first;
+      }
+
       final response = await _apiClient.post(
         ApiEndpoints.register,
         data: {
           'firstName': firstName,
           'lastName': lastName,
           'email': entity.email,
-          'username': entity.email.split('@').first,
+          'username': username,
           'password': entity.password,
           'phoneNumber': '',
           'report': '',
