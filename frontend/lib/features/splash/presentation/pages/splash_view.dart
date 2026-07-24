@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:civic_connect/app/theme/my_theme.dart';
+import 'package:civic_connect/app/theme/app_typography.dart';
 import 'package:civic_connect/features/auth/presentation/view_model/auth_view_model.dart';
 
 class SplashView extends ConsumerStatefulWidget {
@@ -88,41 +89,30 @@ class _SplashViewState extends ConsumerState<SplashView>
                       decoration: BoxDecoration(
                         color: MyTheme.darkNavy,
                         borderRadius: BorderRadius.circular(28),
-                        border: Border.all(color: const Color(0xFF1E293B)),
+                        border: Border.all(color: MyTheme.surfaceElevated),
                         boxShadow: [
                           BoxShadow(
-                            color: MyTheme.civicBlue.withValues(alpha: 0.16),
+                            color: MyTheme.brandBlue.withValues(alpha: 0.16),
                             blurRadius: 24,
                             offset: const Offset(0, 12),
                           ),
                         ],
                       ),
                       child: const Icon(
-                        Icons.hub_outlined,
+                        Icons.apartment_rounded,
                         size: 68,
-                        color: Colors.white,
+                        color: MyTheme.brandBlue,
                       ),
                     ),
                     const SizedBox(height: 28),
-                    const Text(
+                    Text(
                       'CivicConnect',
-                      style: TextStyle(
-                        fontFamily: 'MontserratExtraBold',
-                        fontWeight: FontWeight.bold,
-                        fontSize: 32,
-                        color: Colors.white,
-                        letterSpacing: 1.2,
-                      ),
+                      style: AppTypography.display(MyTheme.textPrimary),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      'Connect. Report. Change.',
-                      style: TextStyle(
-                        fontFamily: 'MontserratItalic',
-                        fontSize: 14,
-                        color: Color(0xFF6B8FAF),
-                        letterSpacing: 0.5,
-                      ),
+                    Text(
+                      'Report and track building issues.',
+                      style: AppTypography.body(MyTheme.textSecondary),
                     ),
                     const SizedBox(height: 18),
                     Container(
@@ -133,20 +123,20 @@ class _SplashViewState extends ConsumerState<SplashView>
                       decoration: BoxDecoration(
                         color: MyTheme.darkNavy,
                         borderRadius: BorderRadius.circular(999),
-                        border: Border.all(color: const Color(0xFF1E293B)),
+                        border: Border.all(color: MyTheme.surfaceElevated),
                       ),
                       child: const Text(
-                        'Community Help Desk',
+                        'For residents',
                         style: TextStyle(
-                          fontFamily: 'MontserratBold',
+                          fontWeight: FontWeight.w700,
                           fontSize: 11,
-                          color: MyTheme.civicBlue,
+                          color: MyTheme.brandBlue,
                           letterSpacing: 0.6,
                         ),
                       ),
                     ),
                     const SizedBox(height: 48),
-                    const CircularProgressIndicator(color: MyTheme.civicBlue),
+                    const CircularProgressIndicator(color: MyTheme.brandBlue),
                   ],
                 ),
               ),

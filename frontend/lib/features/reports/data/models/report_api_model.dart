@@ -25,7 +25,7 @@ class ReportApiModel {
 
   factory ReportApiModel.fromJson(Map<String, dynamic> json) {
     return ReportApiModel(
-      id: (json['_id'] ?? json['id'] ?? '') as String,
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
       title: (json['title'] ?? '') as String,
       description: (json['description'] ?? '') as String,
       category: (json['category'] ?? 'Other') as String,
@@ -33,7 +33,9 @@ class ReportApiModel {
       imageUrl: json['imageUrl'] as String?,
       location: (json['location'] ?? '') as String,
       submittedBy: (json['submittedBy'] ?? '') as String,
-      createdAt: json['createdAt'] == null ? DateTime.now() : DateTime.parse(json['createdAt'] as String),
+      createdAt: json['createdAt'] == null
+          ? DateTime.now()
+          : DateTime.parse(json['createdAt'].toString()),
     );
   }
 

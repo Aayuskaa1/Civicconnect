@@ -17,8 +17,10 @@ class ApiClient {
       baseUrl: ApiEndpoints.baseUrl,
       connectTimeout: ApiEndpoints.connectionTimeout,
       receiveTimeout: ApiEndpoints.receiveTimeout,
+      sendTimeout: ApiEndpoints.sendTimeout,
       headers: {
-        'Content-Type': 'application/json',
+        // Do not force application/json globally — multipart uploads need
+        // multipart/form-data with a boundary (Dio sets that for FormData).
         'Accept': 'application/json',
       },
     );
@@ -26,15 +28,23 @@ class ApiClient {
     _dio.interceptors.add(_AuthInterceptor(_tokenService));
     _dio.interceptors.add(_ErrorInterceptor(_tokenService));
 
+    // Keep retries modest. Auth paths never retry — connection failures to a
+    // wrong host (stale LAN IP / USE_LAN mismatch) previously spun the login
+    // UI for ~60s+ (3 retries × 15s connectTimeout + backoff delays).
     _dio.interceptors.add(
       RetryInterceptor(
         dio: _dio,
-        retries: 3,
-        retryDelays: const [
-          Duration(seconds: 1),
-          Duration(seconds: 2),
-          Duration(seconds: 3),
-        ],
+        retries: 1,
+        retryDelays: const [Duration(milliseconds: 600)],
+        retryEvaluator: (error, attempt) {
+          final path = error.requestOptions.path;
+          if (_isAuthPath(path)) return false;
+
+          // Do not retry unreachable-host errors — retries only mask bad URL config.
+          if (error.type == DioExceptionType.connectionError) return false;
+
+          return RetryInterceptor.defaultRetryEvaluator(error, attempt);
+        },
       ),
     );
 
@@ -50,6 +60,11 @@ class ApiClient {
         ),
       );
     }
+  }
+
+  static bool _isAuthPath(String path) {
+    return path.contains(ApiEndpoints.login) ||
+        path.contains(ApiEndpoints.register);
   }
 
   Future<Response> get(
@@ -71,7 +86,19 @@ class ApiClient {
     Options? options,
   }) async {
     try {
-      return await _dio.post(path, data: data, queryParameters: queryParameters, options: options);
+      final opts = options ?? Options();
+      if (_isAuthPath(path)) {
+        opts.disableRetry = true;
+      }
+      if (data is! FormData) {
+        opts.contentType ??= Headers.jsonContentType;
+      }
+      return await _dio.post(
+        path,
+        data: data,
+        queryParameters: queryParameters,
+        options: opts,
+      );
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -84,7 +111,16 @@ class ApiClient {
     Options? options,
   }) async {
     try {
-      return await _dio.put(path, data: data, queryParameters: queryParameters, options: options);
+      final opts = options ?? Options();
+      if (data is! FormData) {
+        opts.contentType ??= Headers.jsonContentType;
+      }
+      return await _dio.put(
+        path,
+        data: data,
+        queryParameters: queryParameters,
+        options: opts,
+      );
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -97,7 +133,16 @@ class ApiClient {
     Options? options,
   }) async {
     try {
-      return await _dio.patch(path, data: data, queryParameters: queryParameters, options: options);
+      final opts = options ?? Options();
+      if (data is! FormData) {
+        opts.contentType ??= Headers.jsonContentType;
+      }
+      return await _dio.patch(
+        path,
+        data: data,
+        queryParameters: queryParameters,
+        options: opts,
+      );
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -143,11 +188,18 @@ class ApiClient {
     }
     switch (e.type) {
       case DioExceptionType.connectionTimeout:
-        return Exception('Connection timeout. Please check your network.');
+        return Exception(
+          'Connection timeout. Is the backend running? '
+          'Simulator: USE_LAN=false. Device: USE_LAN=true + LAN_HOST.',
+        );
+      case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
         return Exception('Server response timeout.');
       case DioExceptionType.connectionError:
-        return Exception('Could not connect to backend server. Make sure the backend is running.');
+        return Exception(
+          'Could not connect to backend server (${ApiEndpoints.baseUrl}). '
+          'Make sure backend is running and dart-defines match your device.',
+        );
       default:
         return Exception('Network error: ${e.message}');
     }
@@ -160,16 +212,28 @@ class _AuthInterceptor extends Interceptor {
   _AuthInterceptor(this._tokenService);
 
   @override
-  void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     final path = options.path;
     if (path.contains(ApiEndpoints.login) || path.contains(ApiEndpoints.register)) {
-      return handler.next(options);
+      handler.next(options);
+      return;
     }
-    final token = await _tokenService.getToken();
-    if (token != null) {
-      options.headers['Authorization'] = 'Bearer $token';
-    }
-    return handler.next(options);
+
+    // Avoid `async void` interceptors — awaiting secure storage there can stall Dio.
+    _tokenService.getToken().then((token) {
+      if (token != null) {
+        options.headers['Authorization'] = 'Bearer $token';
+      }
+      handler.next(options);
+    }).catchError((Object error, StackTrace stackTrace) {
+      handler.reject(
+        DioException(
+          requestOptions: options,
+          error: error,
+          stackTrace: stackTrace,
+        ),
+      );
+    });
   }
 }
 
@@ -179,11 +243,18 @@ class _ErrorInterceptor extends Interceptor {
   _ErrorInterceptor(this._tokenService);
 
   @override
-  void onError(DioException err, ErrorInterceptorHandler handler) async {
-    if (err.response?.statusCode == 401) {
-      await _tokenService.clearToken();
-      globalNavigatorKey.currentState?.pushNamedAndRemoveUntil('/login', (route) => false);
+  void onError(DioException err, ErrorInterceptorHandler handler) {
+    if (err.response?.statusCode != 401) {
+      handler.next(err);
+      return;
     }
-    return handler.next(err);
+
+    _tokenService.clearToken().whenComplete(() {
+      globalNavigatorKey.currentState?.pushNamedAndRemoveUntil(
+        '/login',
+        (route) => false,
+      );
+      handler.next(err);
+    });
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:civic_connect/app/theme/my_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:civic_connect/core/utils/snackbar_utils.dart';
 import 'package:civic_connect/features/auth/presentation/state/auth_state.dart';
@@ -44,19 +45,32 @@ class _SignupViewState extends ConsumerState<SignupView> {
     final authState = ref.watch(authViewModelProvider);
 
     ref.listen<AuthState>(authViewModelProvider, (previous, next) {
-      if (next.status == AuthStatus.registered) {
-        SnackbarUtils.showSuccess(context, 'Account created successfully! Please log in.');
+      if (next.status == AuthStatus.registered &&
+          previous?.status != AuthStatus.registered) {
+        SnackbarUtils.showSuccess(
+          context,
+          'Account created successfully! Please log in.',
+        );
         ref.read(authViewModelProvider.notifier).resetState();
         Navigator.pop(context); // Go back to login screen
-      } else if (next.status == AuthStatus.error && next.errorMessage != null) {
+      } else if (next.status == AuthStatus.error &&
+          next.errorMessage != null &&
+          previous?.status != AuthStatus.error) {
         SnackbarUtils.showError(context, next.errorMessage!);
         ref.read(authViewModelProvider.notifier).resetState();
       }
     });
 
     return Scaffold(
-      backgroundColor: const Color(0xFF001A30),
-      body: SafeArea(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [MyTheme.primaryLight, MyTheme.background],
+          ),
+        ),
+        child: SafeArea(
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
@@ -64,35 +78,35 @@ class _SignupViewState extends ConsumerState<SignupView> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Icon(
-                  Icons.hub_outlined,
+                  Icons.apartment_rounded,
                   size: 64,
-                  color: Colors.white,
+                  color: MyTheme.brandBlue,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 const Text(
                   'Create Account',
                   style: TextStyle(
-                    fontFamily: 'MontserratExtraBold',
+                    fontWeight: FontWeight.w800,
                     fontSize: 28,
-                    color: Colors.white,
+                    color: MyTheme.textPrimary,
                     letterSpacing: 1.0,
                   ),
                 ),
                 const Text(
-                  'Join CivicConnect to report issues and track resolutions',
+                  'Join your building community',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontFamily: 'MontserratRegular',
-                    fontSize: 12,
-                    color: Color(0xFF6B8FAF),
+                    fontSize: 13,
+                    color: MyTheme.mutedText,
                   ),
                 ),
                 const SizedBox(height: 24),
                 Card(
-                  color: Colors.white,
-                  elevation: 8,
+                  color: MyTheme.darkNavy,
+                  elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(25),
+                    side: const BorderSide(color: MyTheme.hairline),
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(24.0),
@@ -103,13 +117,13 @@ class _SignupViewState extends ConsumerState<SignupView> {
                         children: [
                           TextFormField(
                             controller: _fullNameController,
-                            style: const TextStyle(color: Color(0xFF001A30), fontFamily: 'MontserratRegular'),
+                            style: const TextStyle(color: MyTheme.textOnLight),
                             decoration: InputDecoration(
                               labelText: 'Full Name',
-                              labelStyle: const TextStyle(color: Color(0xFF6B8FAF), fontFamily: 'MontserratRegular'),
-                              prefixIcon: const Icon(Icons.person_outline, color: Color(0xFF6B8FAF)),
+                              labelStyle: const TextStyle(color: MyTheme.mutedText),
+                              prefixIcon: const Icon(Icons.person_outline, color: MyTheme.mutedText),
                               filled: true,
-                              fillColor: const Color(0xFFF0F4FF),
+                              fillColor: MyTheme.lightBg,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(14),
                                 borderSide: BorderSide.none,
@@ -120,14 +134,14 @@ class _SignupViewState extends ConsumerState<SignupView> {
                           const SizedBox(height: 16),
                           TextFormField(
                             controller: _emailController,
-                            style: const TextStyle(color: Color(0xFF001A30), fontFamily: 'MontserratRegular'),
+                            style: const TextStyle(color: MyTheme.textOnLight),
                             keyboardType: TextInputType.emailAddress,
                             decoration: InputDecoration(
                               labelText: 'Email Address',
-                              labelStyle: const TextStyle(color: Color(0xFF6B8FAF), fontFamily: 'MontserratRegular'),
-                              prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF6B8FAF)),
+                              labelStyle: const TextStyle(color: MyTheme.mutedText),
+                              prefixIcon: const Icon(Icons.email_outlined, color: MyTheme.mutedText),
                               filled: true,
-                              fillColor: const Color(0xFFF0F4FF),
+                              fillColor: MyTheme.lightBg,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(14),
                                 borderSide: BorderSide.none,
@@ -142,21 +156,21 @@ class _SignupViewState extends ConsumerState<SignupView> {
                           const SizedBox(height: 16),
                           TextFormField(
                             controller: _passwordController,
-                            style: const TextStyle(color: Color(0xFF001A30), fontFamily: 'MontserratRegular'),
+                            style: const TextStyle(color: MyTheme.textOnLight),
                             obscureText: _obscurePassword,
                             decoration: InputDecoration(
                               labelText: 'Password',
-                              labelStyle: const TextStyle(color: Color(0xFF6B8FAF), fontFamily: 'MontserratRegular'),
-                              prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF6B8FAF)),
+                              labelStyle: const TextStyle(color: MyTheme.mutedText),
+                              prefixIcon: const Icon(Icons.lock_outline, color: MyTheme.mutedText),
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                                  color: const Color(0xFF6B8FAF),
+                                  color: MyTheme.mutedText,
                                 ),
                                 onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                               ),
                               filled: true,
-                              fillColor: const Color(0xFFF0F4FF),
+                              fillColor: MyTheme.lightBg,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(14),
                                 borderSide: BorderSide.none,
@@ -171,21 +185,21 @@ class _SignupViewState extends ConsumerState<SignupView> {
                           const SizedBox(height: 16),
                           TextFormField(
                             controller: _confirmPasswordController,
-                            style: const TextStyle(color: Color(0xFF001A30), fontFamily: 'MontserratRegular'),
+                            style: const TextStyle(color: MyTheme.textOnLight),
                             obscureText: _obscureConfirmPassword,
                             decoration: InputDecoration(
                               labelText: 'Confirm Password',
-                              labelStyle: const TextStyle(color: Color(0xFF6B8FAF), fontFamily: 'MontserratRegular'),
-                              prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF6B8FAF)),
+                              labelStyle: const TextStyle(color: MyTheme.mutedText),
+                              prefixIcon: const Icon(Icons.lock_outline, color: MyTheme.mutedText),
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   _obscureConfirmPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                                  color: const Color(0xFF6B8FAF),
+                                  color: MyTheme.mutedText,
                                 ),
                                 onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
                               ),
                               filled: true,
-                              fillColor: const Color(0xFFF0F4FF),
+                              fillColor: MyTheme.lightBg,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(14),
                                 borderSide: BorderSide.none,
@@ -201,19 +215,19 @@ class _SignupViewState extends ConsumerState<SignupView> {
                           ElevatedButton(
                             onPressed: authState.status == AuthStatus.loading ? null : _handleSignup,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF001020),
-                              foregroundColor: Colors.white,
+                              backgroundColor: MyTheme.primary,
+                              foregroundColor: MyTheme.textOnPrimary,
                               minimumSize: const Size.fromHeight(55),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
+                                borderRadius: BorderRadius.circular(MyTheme.radiusMd),
                               ),
                             ),
                             child: authState.status == AuthStatus.loading
-                                ? const CircularProgressIndicator(color: Colors.white)
+                                ? const CircularProgressIndicator(color: MyTheme.textOnPrimary)
                                 : const Text(
                                     'Sign Up',
                                     style: TextStyle(
-                                      fontFamily: 'MontserratBold',
+                                      fontWeight: FontWeight.w700,
                                       fontSize: 16,
                                     ),
                                   ),
@@ -225,8 +239,7 @@ class _SignupViewState extends ConsumerState<SignupView> {
                               const Text(
                                 "Already have an account? ",
                                 style: TextStyle(
-                                  color: Color(0xFF6B8FAF),
-                                  fontFamily: 'MontserratRegular',
+                                  color: MyTheme.mutedText,
                                   fontSize: 13,
                                 ),
                               ),
@@ -238,8 +251,8 @@ class _SignupViewState extends ConsumerState<SignupView> {
                                 child: const Text(
                                   'Login',
                                   style: TextStyle(
-                                    color: Color(0xFF1A56DB),
-                                    fontFamily: 'MontserratBold',
+                                    color: MyTheme.primaryBlue,
+                                    fontWeight: FontWeight.w700,
                                     fontSize: 13,
                                   ),
                                 ),
@@ -254,6 +267,7 @@ class _SignupViewState extends ConsumerState<SignupView> {
               ],
             ),
           ),
+        ),
         ),
       ),
     );

@@ -1,12 +1,33 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:civic_connect/app/theme/my_theme.dart';
+import 'package:civic_connect/app/theme/app_typography.dart';
+import 'package:civic_connect/app/theme/app_spacing.dart';
+import 'package:civic_connect/features/auth/presentation/view_model/auth_view_model.dart';
 import 'package:civic_connect/features/reports/domain/entities/report_entity.dart';
+import 'package:civic_connect/features/reports/presentation/view_model/report_view_model.dart';
 
-class ReportDetailView extends StatelessWidget {
+class ReportDetailView extends ConsumerStatefulWidget {
   final ReportEntity report;
 
   const ReportDetailView({super.key, required this.report});
+
+  @override
+  ConsumerState<ReportDetailView> createState() => _ReportDetailViewState();
+}
+
+class _ReportDetailViewState extends ConsumerState<ReportDetailView> {
+  late ReportEntity _report;
+  bool _updatingStatus = false;
+
+  static const _statusOptions = ['pending', 'in_progress', 'resolved'];
+
+  @override
+  void initState() {
+    super.initState();
+    _report = widget.report;
+  }
 
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
@@ -17,7 +38,7 @@ class ReportDetailView extends StatelessWidget {
       case 'resolved':
         return MyTheme.statusResolved;
       default:
-        return Colors.grey;
+        return MyTheme.mutedText;
     }
   }
 
@@ -34,29 +55,52 @@ class ReportDetailView extends StatelessWidget {
     }
   }
 
+  Future<void> _onStatusChanged(String? status) async {
+    if (status == null || status == _report.status) return;
+    setState(() => _updatingStatus = true);
+    final updated = await ref
+        .read(reportViewModelProvider.notifier)
+        .updateReportStatus(_report.reportId, status);
+    if (!mounted) return;
+    setState(() => _updatingStatus = false);
+    if (updated != null) {
+      setState(() => _report = updated);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Status updated to ${_formatStatusText(status)}')),
+      );
+    } else {
+      final error = ref.read(reportViewModelProvider).errorMessage;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error ?? 'Failed to update status')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final statusColor = _getStatusColor(report.status);
-    final statusText = _formatStatusText(report.status);
+    final user = ref.watch(authViewModelProvider).user;
+    final isAdmin = (user?.role ?? '').toLowerCase() == 'admin';
+    final statusColor = _getStatusColor(_report.status);
+    final statusText = _formatStatusText(_report.status);
 
     Widget buildImageWidget() {
-      if (report.imageUrl == null || report.imageUrl!.isEmpty) {
+      if (_report.imageUrl == null || _report.imageUrl!.isEmpty) {
         return Container(
-          height: 200,
-          color: const Color(0xFF1E293B),
-          child: const Center(
+          height: 220,
+          color: MyTheme.surfaceElevated,
+          child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.image_not_supported_outlined, color: Color(0xFF6B8FAF), size: 48),
-                SizedBox(height: 8),
+                const Icon(
+                  Icons.image_not_supported_outlined,
+                  color: MyTheme.textSecondary,
+                  size: 48,
+                ),
+                const SizedBox(height: AppSpacing.xs),
                 Text(
                   'No Image Uploaded',
-                  style: TextStyle(
-                    fontFamily: 'MontserratRegular',
-                    color: Color(0xFF6B8FAF),
-                    fontSize: 12,
-                  ),
+                  style: AppTypography.caption(MyTheme.textSecondary),
                 ),
               ],
             ),
@@ -64,9 +108,9 @@ class ReportDetailView extends StatelessWidget {
         );
       }
 
-      final isFile = !report.imageUrl!.startsWith('http');
+      final isFile = !_report.imageUrl!.startsWith('http');
       if (isFile) {
-        final file = File(report.imageUrl!);
+        final file = File(_report.imageUrl!);
         if (file.existsSync()) {
           return Image.file(
             file,
@@ -78,16 +122,16 @@ class ReportDetailView extends StatelessWidget {
       }
 
       return Image.network(
-        report.imageUrl!,
+        _report.imageUrl!,
         height: 220,
         width: double.infinity,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
           return Container(
             height: 220,
-            color: const Color(0xFF1E293B),
+            color: MyTheme.surfaceElevated,
             child: const Center(
-              child: Icon(Icons.broken_image_outlined, color: Color(0xFF6B8FAF), size: 48),
+              child: Icon(Icons.broken_image_outlined, color: MyTheme.mutedText, size: 48),
             ),
           );
         },
@@ -97,11 +141,11 @@ class ReportDetailView extends StatelessWidget {
     return Scaffold(
       backgroundColor: MyTheme.darkBackground,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Report Details',
-          style: TextStyle(fontFamily: 'MontserratBold', fontWeight: FontWeight.bold),
+          style: AppTypography.title(MyTheme.textPrimary),
         ),
-        backgroundColor: MyTheme.darkNavy,
+        backgroundColor: MyTheme.surface,
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -110,7 +154,7 @@ class ReportDetailView extends StatelessWidget {
           children: [
             buildImageWidget(),
             Padding(
-              padding: const EdgeInsets.all(20.0),
+              padding: AppSpacing.pageAll,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -118,119 +162,125 @@ class ReportDetailView extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: MyTheme.civicBlue.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(20),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.xs,
+                          vertical: AppSpacing.xxs,
                         ),
+                        decoration: AppDecorations.statusPill(MyTheme.primary),
                         child: Text(
-                          report.category.toUpperCase(),
-                          style: const TextStyle(
-                            fontFamily: 'MontserratBold',
-                            color: MyTheme.civicBlue,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.8,
-                          ),
+                          _report.category.toUpperCase(),
+                          style: AppTypography.overline(MyTheme.primary),
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: statusColor.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(20),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.xs,
+                          vertical: AppSpacing.xxs,
                         ),
+                        decoration: AppDecorations.statusPill(statusColor),
                         child: Text(
                           statusText.toUpperCase(),
-                          style: TextStyle(
-                            fontFamily: 'MontserratBold',
-                            color: statusColor,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.8,
-                          ),
+                          style: AppTypography.overline(statusColor),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: AppSpacing.md),
                   Text(
-                    report.title,
-                    style: const TextStyle(
-                      fontFamily: 'MontserratBold',
-                      fontSize: 22,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    _report.title,
+                    style: AppTypography.headline(MyTheme.textPrimary),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.sm),
                   Row(
                     children: [
-                      const Icon(Icons.access_time, color: Color(0xFF6B8FAF), size: 16),
-                      const SizedBox(width: 6),
+                      const Icon(
+                        Icons.access_time,
+                        color: MyTheme.textSecondary,
+                        size: 16,
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
                       Text(
-                        'Submitted on ${_formatDate(report.createdAt)}',
-                        style: const TextStyle(
-                          fontFamily: 'MontserratRegular',
-                          color: Color(0xFF6B8FAF),
-                          fontSize: 13,
-                        ),
+                        'Submitted on ${_formatDate(_report.createdAt)}',
+                        style: AppTypography.bodySm(MyTheme.textSecondary),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.xs),
                   Row(
                     children: [
-                      const Icon(Icons.location_on_outlined, color: Color(0xFF6B8FAF), size: 16),
-                      const SizedBox(width: 6),
+                      const Icon(
+                        Icons.location_on_outlined,
+                        color: MyTheme.textSecondary,
+                        size: 16,
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
                       Expanded(
                         child: Text(
-                          report.location,
-                          style: const TextStyle(
-                            fontFamily: 'MontserratRegular',
-                            color: Color(0xFF6B8FAF),
-                            fontSize: 13,
-                          ),
+                          _report.location,
+                          style: AppTypography.bodySm(MyTheme.textSecondary),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
-                  const Divider(color: Color(0xFF1E293B)),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Description',
-                    style: TextStyle(
-                      fontFamily: 'MontserratBold',
-                      fontSize: 16,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
+                  if (isAdmin) ...[
+                    const SizedBox(height: AppSpacing.lg),
+                    Text(
+                      'Update Status',
+                      style: AppTypography.titleSm(MyTheme.textPrimary),
                     ),
-                  ),
-                  const SizedBox(height: 8),
+                    const SizedBox(height: AppSpacing.xs),
+                    DropdownButtonFormField<String>(
+                      key: ValueKey(_report.status),
+                      initialValue: _statusOptions.contains(_report.status)
+                          ? _report.status
+                          : 'pending',
+                      dropdownColor: MyTheme.surface,
+                      style: AppTypography.body(MyTheme.textPrimary),
+                      decoration: const InputDecoration(
+                        filled: true,
+                        fillColor: MyTheme.lightBg,
+                      ),
+                      items: _statusOptions
+                          .map(
+                            (status) => DropdownMenuItem(
+                              value: status,
+                              child: Text(_formatStatusText(status)),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: _updatingStatus ? null : _onStatusChanged,
+                    ),
+                    if (_updatingStatus) ...[
+                      const SizedBox(height: AppSpacing.sm),
+                      const LinearProgressIndicator(),
+                    ],
+                  ],
+                  const SizedBox(height: AppSpacing.lg),
+                  const Divider(color: MyTheme.border),
+                  const SizedBox(height: AppSpacing.md),
                   Text(
-                    report.description,
-                    style: const TextStyle(
-                      fontFamily: 'MontserratRegular',
-                      fontSize: 15,
-                      color: Color(0xFFE2E8F0),
-                      height: 1.6,
-                    ),
+                    'Description',
+                    style: AppTypography.titleSm(MyTheme.textPrimary),
                   ),
-                  const SizedBox(height: 24),
-                  const Divider(color: Color(0xFF1E293B)),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    _report.description,
+                    style: AppTypography.body(MyTheme.textSecondary),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  const Divider(color: MyTheme.border),
+                  const SizedBox(height: AppSpacing.md),
                   Row(
                     children: [
-                      const Icon(Icons.person_outline, color: Color(0xFF6B8FAF), size: 16),
-                      const SizedBox(width: 8),
+                      const Icon(
+                        Icons.person_outline,
+                        color: MyTheme.textSecondary,
+                        size: 16,
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
                       Text(
-                        'Reported by: ${report.submittedBy}',
-                        style: const TextStyle(
-                          fontFamily: 'MontserratRegular',
-                          fontSize: 13,
-                          color: Color(0xFF6B8FAF),
-                        ),
+                        'Reported by: ${_report.submittedBy}',
+                        style: AppTypography.bodySm(MyTheme.textSecondary),
                       ),
                     ],
                   ),

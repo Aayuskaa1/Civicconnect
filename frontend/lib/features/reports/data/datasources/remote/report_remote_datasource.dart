@@ -13,7 +13,7 @@ class ReportRemoteDatasourceImpl implements ReportRemoteDatasource {
   @override
   Future<List<ReportEntity>> getReports() async {
     try {
-      final response = await _apiClient.get(ApiEndpoints.reports);
+      final response = await _apiClient.get(ApiEndpoints.complaints);
       if (response.statusCode == 200) {
         final data = response.data['data'] as List<dynamic>;
         return data.map((json) => ReportApiModel.fromJson(json as Map<String, dynamic>).toEntity()).toList();
@@ -27,7 +27,8 @@ class ReportRemoteDatasourceImpl implements ReportRemoteDatasource {
   @override
   Future<List<ReportEntity>> getMyReports(String userId) async {
     try {
-      final response = await _apiClient.get(ApiEndpoints.getMyReports(userId));
+      // Shared API: GET /complaints/me (token identifies user; userId unused)
+      final response = await _apiClient.get(ApiEndpoints.myComplaints);
       if (response.statusCode == 200) {
         final data = response.data['data'] as List<dynamic>;
         return data.map((json) => ReportApiModel.fromJson(json as Map<String, dynamic>).toEntity()).toList();
@@ -57,9 +58,9 @@ class ReportRemoteDatasourceImpl implements ReportRemoteDatasource {
           ...dataMap,
           'image': await MultipartFile.fromFile(imagePath, filename: imagePath.split('/').last),
         });
-        response = await _apiClient.post(ApiEndpoints.reports, data: formData);
+        response = await _apiClient.post(ApiEndpoints.complaints, data: formData);
       } else {
-        response = await _apiClient.post(ApiEndpoints.reports, data: dataMap);
+        response = await _apiClient.post(ApiEndpoints.complaints, data: dataMap);
       }
 
       if (response.statusCode == 201 || response.statusCode == 200) {
@@ -67,6 +68,23 @@ class ReportRemoteDatasourceImpl implements ReportRemoteDatasource {
         return ReportApiModel.fromJson(resData).toEntity();
       }
       throw Exception('Failed to submit report');
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<ReportEntity> updateReportStatus(String reportId, String status) async {
+    try {
+      final response = await _apiClient.patch(
+        ApiEndpoints.updateComplaintAdmin(reportId),
+        data: {'status': status},
+      );
+      if (response.statusCode == 200) {
+        final resData = response.data['data'] as Map<String, dynamic>;
+        return ReportApiModel.fromJson(resData).toEntity();
+      }
+      throw Exception('Failed to update report status');
     } catch (e) {
       rethrow;
     }

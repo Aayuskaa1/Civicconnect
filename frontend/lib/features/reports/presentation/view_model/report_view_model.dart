@@ -9,6 +9,7 @@ import 'package:civic_connect/features/reports/domain/repositories/report_reposi
 import 'package:civic_connect/features/reports/domain/usecases/get_my_reports_usecase.dart';
 import 'package:civic_connect/features/reports/domain/usecases/get_reports_usecase.dart';
 import 'package:civic_connect/features/reports/domain/usecases/submit_report_usecase.dart';
+import 'package:civic_connect/features/reports/domain/usecases/update_report_status_usecase.dart';
 import 'package:civic_connect/features/reports/presentation/state/report_state.dart';
 
 // Reports Providers
@@ -38,6 +39,10 @@ final getMyReportsUsecaseProvider = Provider<GetMyReportsUsecase>((ref) {
 
 final submitReportUsecaseProvider = Provider<SubmitReportUsecase>((ref) {
   return SubmitReportUsecase(ref.read(reportRepositoryProvider));
+});
+
+final updateReportStatusUsecaseProvider = Provider<UpdateReportStatusUsecase>((ref) {
+  return UpdateReportStatusUsecase(ref.read(reportRepositoryProvider));
 });
 
 final reportViewModelProvider = NotifierProvider<ReportViewModel, ReportState>(
@@ -114,6 +119,34 @@ class ReportViewModel extends Notifier<ReportState> {
           reports: [newReport, ...state.reports],
           myReports: [newReport, ...state.myReports],
         );
+      },
+    );
+  }
+
+  Future<ReportEntity?> updateReportStatus(String reportId, String status) async {
+    state = state.copyWith(isLoading: true, errorMessage: null, isSuccess: false);
+    final result = await ref.read(updateReportStatusUsecaseProvider).call(
+      UpdateReportStatusParams(reportId: reportId, status: status),
+    );
+    return result.fold(
+      (failure) {
+        state = state.copyWith(isLoading: false, errorMessage: failure.message);
+        return null;
+      },
+      (updated) {
+        List<ReportEntity> replace(List<ReportEntity> list) {
+          return list
+              .map((report) => report.reportId == updated.reportId ? updated : report)
+              .toList();
+        }
+
+        state = state.copyWith(
+          isLoading: false,
+          isSuccess: true,
+          reports: replace(state.reports),
+          myReports: replace(state.myReports),
+        );
+        return updated;
       },
     );
   }

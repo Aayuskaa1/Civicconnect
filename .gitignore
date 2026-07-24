@@ -191,3 +191,18 @@ trace.log
 
 # Uploads
 .uploads/
+backend/uploads/
+
+# Secrets / local env
+*.env
+!backend/.env.example
+
+# Local Flutter/iOS build noise
+frontend/build
+frontend/ios/Pods/
+frontend/ios/.symlinks/
+frontend/ios/Flutter/ephemeral/
+xcuserdata/
+*.xcuserstate
+**/.DS_Store
+

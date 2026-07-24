@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:civic_connect/app/theme/my_theme.dart';
+import 'package:civic_connect/app/theme/app_typography.dart';
+import 'package:civic_connect/app/theme/app_spacing.dart';
 import 'package:civic_connect/features/reports/domain/entities/report_entity.dart';
 import 'package:civic_connect/features/reports/presentation/pages/report_detail_view.dart';
 import 'package:civic_connect/features/reports/presentation/view_model/report_view_model.dart';
@@ -16,19 +18,35 @@ class _ReportListViewState extends ConsumerState<ReportListView> {
   String _selectedCategory = 'All';
   String _selectedStatus = 'All';
 
-  final List<String> _categories = ['All', 'Road', 'Water', 'Electricity', 'Safety', 'Other'];
+  final List<String> _categories = [
+    'All',
+    'Maintenance',
+    'Water',
+    'Electricity',
+    'Safety',
+    'Lighting',
+    'Parking',
+    'Noise',
+    'Other',
+  ];
   final List<String> _statuses = ['All', 'pending', 'in_progress', 'resolved'];
 
   IconData _getCategoryIcon(String category) {
     switch (category.toLowerCase()) {
-      case 'road':
-        return Icons.add_road_outlined;
+      case 'maintenance':
+        return Icons.handyman_outlined;
       case 'water':
         return Icons.water_drop_outlined;
       case 'electricity':
         return Icons.lightbulb_outline;
       case 'safety':
         return Icons.security;
+      case 'lighting':
+        return Icons.wb_twilight_outlined;
+      case 'parking':
+        return Icons.local_parking_outlined;
+      case 'noise':
+        return Icons.volume_up_outlined;
       default:
         return Icons.help_outline;
     }
@@ -43,7 +61,7 @@ class _ReportListViewState extends ConsumerState<ReportListView> {
       case 'resolved':
         return MyTheme.statusResolved;
       default:
-        return Colors.grey;
+        return MyTheme.mutedText;
     }
   }
 
@@ -77,23 +95,20 @@ class _ReportListViewState extends ConsumerState<ReportListView> {
       backgroundColor: MyTheme.darkBackground,
       appBar: AppBar(
         title: const Text(
-          'Community Reports',
-          style: TextStyle(fontFamily: 'MontserratBold', fontWeight: FontWeight.bold),
+          'Reports',
+          style: TextStyle(fontWeight: FontWeight.w700),
         ),
-        backgroundColor: MyTheme.darkNavy,
+        backgroundColor: MyTheme.surface,
         elevation: 0,
         centerTitle: false,
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Horizontal Category Filter
-          Container(
-            color: MyTheme.darkNavy,
-            padding: const EdgeInsets.symmetric(vertical: 12),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: _categories.map((category) {
                   final isSelected = _selectedCategory == category;
@@ -103,14 +118,19 @@ class _ReportListViewState extends ConsumerState<ReportListView> {
                       label: Text(
                         category,
                         style: TextStyle(
-                          fontFamily: isSelected ? 'MontserratBold' : 'MontserratRegular',
-                          color: isSelected ? Colors.white : const Color(0xFF6B8FAF),
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          fontWeight:
+                              isSelected ? FontWeight.w700 : FontWeight.w500,
+                          color: isSelected
+                              ? MyTheme.textOnPrimary
+                              : MyTheme.textSecondary,
                         ),
                       ),
                       selected: isSelected,
-                      selectedColor: MyTheme.civicBlue,
-                      backgroundColor: const Color(0xFF1E293B),
+                      selectedColor: MyTheme.primary,
+                      backgroundColor: MyTheme.surface,
+                      side: BorderSide(
+                        color: isSelected ? MyTheme.primary : MyTheme.border,
+                      ),
                       onSelected: (selected) {
                         if (selected) {
                           setState(() => _selectedCategory = category);
@@ -122,55 +142,58 @@ class _ReportListViewState extends ConsumerState<ReportListView> {
               ),
             ),
           ),
-          // Status Filter Row
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Filter by Status:',
-                  style: TextStyle(
-                    fontFamily: 'MontserratRegular',
-                    color: Color(0xFF6B8FAF),
-                    fontSize: 13,
-                  ),
-                ),
-                DropdownButton<String>(
-                  value: _selectedStatus,
-                  dropdownColor: MyTheme.darkNavy,
-                  underline: const SizedBox(),
-                  icon: const Icon(Icons.filter_list, color: MyTheme.civicBlue),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontFamily: 'MontserratBold',
-                    fontSize: 13,
-                  ),
-                  items: _statuses.map((status) {
-                    return DropdownMenuItem<String>(
-                      value: status,
-                      child: Text(status == 'All' ? 'All Statuses' : _formatStatusText(status)),
-                    );
-                  }).toList(),
-                  onChanged: (val) {
-                    if (val != null) {
-                      setState(() => _selectedStatus = val);
-                    }
-                  },
-                ),
-              ],
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: _statuses.map((status) {
+                  final isSelected = _selectedStatus == status;
+                  final label =
+                      status == 'All' ? 'All' : _formatStatusText(status);
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: FilterChip(
+                      label: Text(
+                        label,
+                        style: TextStyle(
+                          fontWeight:
+                              isSelected ? FontWeight.w700 : FontWeight.w500,
+                          fontSize: 12,
+                          color: isSelected
+                              ? MyTheme.primary
+                              : MyTheme.textSecondary,
+                        ),
+                      ),
+                      selected: isSelected,
+                      selectedColor: MyTheme.primaryLight,
+                      backgroundColor: MyTheme.surface,
+                      checkmarkColor: MyTheme.primary,
+                      side: BorderSide(
+                        color: isSelected ? MyTheme.primary : MyTheme.border,
+                      ),
+                      onSelected: (selected) {
+                        if (selected) {
+                          setState(() => _selectedStatus = status);
+                        }
+                      },
+                    ),
+                  );
+                }).toList(),
+              ),
             ),
           ),
+          const Divider(height: 1, color: MyTheme.border),
           // Reports Feed List
           Expanded(
             child: RefreshIndicator(
               onRefresh: () async {
                 await ref.read(reportViewModelProvider.notifier).loadReports();
               },
-              color: MyTheme.civicBlue,
+              color: MyTheme.brandBlue,
               backgroundColor: MyTheme.darkNavy,
               child: reportState.isLoading && reportState.reports.isEmpty
-                  ? const Center(child: CircularProgressIndicator(color: MyTheme.civicBlue))
+                  ? const Center(child: CircularProgressIndicator(color: MyTheme.brandBlue))
                   : filteredReports.isEmpty
                       ? ListView(
                           children: [
@@ -179,7 +202,7 @@ class _ReportListViewState extends ConsumerState<ReportListView> {
                               child: Icon(
                                 Icons.list_alt_outlined,
                                 size: 64,
-                                color: Color(0xFF6B8FAF),
+                                color: MyTheme.mutedText,
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -187,9 +210,9 @@ class _ReportListViewState extends ConsumerState<ReportListView> {
                               child: Text(
                                 'No reports match your filters.',
                                 style: TextStyle(
-                                  fontFamily: 'MontserratBold',
+                                  fontWeight: FontWeight.w700,
                                   fontSize: 16,
-                                  color: Color(0xFF6B8FAF),
+                                  color: MyTheme.mutedText,
                                 ),
                               ),
                             ),
@@ -241,27 +264,26 @@ class _ReportCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: MyTheme.darkNavy,
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Material(
+      color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
+        borderRadius: BorderRadius.circular(MyTheme.radiusLg),
+        hoverColor: MyTheme.primaryLight.withValues(alpha: 0.35),
+        child: Ink(
+          padding: AppSpacing.cardPadding,
+          decoration: AppDecorations.card(),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(icon, color: MyTheme.civicBlue, size: 28),
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                decoration: AppDecorations.iconWell(),
+                child: Icon(icon, color: MyTheme.primary, size: 24),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -271,57 +293,41 @@ class _ReportCard extends StatelessWidget {
                       children: [
                         Text(
                           report.category.toUpperCase(),
-                          style: const TextStyle(
-                            fontFamily: 'MontserratBold',
-                            color: MyTheme.civicBlue,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.8,
-                          ),
+                          style: AppTypography.overline(MyTheme.primary),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: statusColor.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(10),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.xs,
+                            vertical: AppSpacing.xxs,
                           ),
+                          decoration: AppDecorations.statusPill(statusColor),
                           child: Text(
                             statusText.toUpperCase(),
-                            style: TextStyle(
-                              fontFamily: 'MontserratBold',
-                              color: statusColor,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: AppTypography.overline(statusColor),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: AppSpacing.xs),
                     Text(
                       report.title,
-                      style: const TextStyle(
-                        fontFamily: 'MontserratBold',
-                        fontSize: 16,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: AppTypography.titleSm(MyTheme.textPrimary),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: AppSpacing.xs),
                     Row(
                       children: [
-                        const Icon(Icons.location_on_outlined, color: Color(0xFF6B8FAF), size: 14),
-                        const SizedBox(width: 4),
+                        const Icon(
+                          Icons.location_on_outlined,
+                          color: MyTheme.textSecondary,
+                          size: 14,
+                        ),
+                        const SizedBox(width: AppSpacing.xxs),
                         Expanded(
                           child: Text(
                             report.location,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontFamily: 'MontserratRegular',
-                              color: Color(0xFF6B8FAF),
-                              fontSize: 12,
-                            ),
+                            style: AppTypography.caption(MyTheme.textSecondary),
                           ),
                         ),
                       ],
@@ -332,6 +338,7 @@ class _ReportCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }

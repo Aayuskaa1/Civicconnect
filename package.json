@@ -1,12 +1,15 @@
 {
   "name": "civicconnect-monorepo",
   "version": "1.0.0",
-  "description": "CivicConnect workspace",
+  "description": "CivicConnect apartment building workspace",
   "scripts": {
-    "dev": "npm run dev:all",
+    "dev": "npm run dev:backend",
     "dev:backend": "cd backend && npm run dev",
-    "dev:frontend": "cd frontend && bash scripts/setup_ios_build_dir.sh && flutter run",
-    "dev:all": "npx concurrently \"npm run dev:backend\" \"npm run dev:frontend\""
+    "dev:ios-simulator": "cd frontend && bash scripts/setup_ios_build_dir.sh && flutter run --dart-define=USE_LAN=false",
+    "dev:ios-device": "cd frontend && bash scripts/setup_ios_build_dir.sh && flutter run --dart-define=USE_LAN=true --dart-define=LAN_HOST=${LAN_HOST:-192.168.1.70}",
+    "dev:frontend": "npm run dev:ios-device",
+    "dev:all:simulator": "npx concurrently \"npm run dev:backend\" \"npm run dev:ios-simulator\"",
+    "dev:all:device": "npx concurrently \"npm run dev:backend\" \"npm run dev:ios-device\""
   },
   "dependencies": {
     "concurrently": "^8.2.2"

@@ -115,4 +115,22 @@ class ReportRepositoryImpl implements ReportRepository {
       return Left(LocalDatabaseFailure(e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, ReportEntity>> updateReportStatus(
+    String reportId,
+    String status,
+  ) async {
+    try {
+      final isOnline = await _networkInfo.isConnected;
+      if (!isOnline) {
+        return const Left(ApiFailure(message: 'Internet connection required to update status'));
+      }
+      final updated = await _remoteDataSource.updateReportStatus(reportId, status);
+      await _localDataSource.saveReport(ReportHiveModel.fromEntity(updated));
+      return Right(updated);
+    } catch (e) {
+      return Left(ApiFailure(message: e.toString().replaceAll('Exception: ', '')));
+    }
+  }
 }

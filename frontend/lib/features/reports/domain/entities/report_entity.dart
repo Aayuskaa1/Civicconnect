@@ -4,7 +4,7 @@ class ReportEntity extends Equatable {
   final String reportId;
   final String title;
   final String description;
-  final String category;      // e.g. Road, Water, Electricity, Safety
+  final String category; // e.g. Maintenance, Water, Parking, Noise
   final String status;        // pending, in_progress, resolved
   final String? imageUrl;
   final String location;

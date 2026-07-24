@@ -1,8 +1,12 @@
+import 'dart:async';
+
+import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:civic_connect/core/api/api_client.dart';
+import 'package:civic_connect/core/error/failures.dart';
 import 'package:civic_connect/core/providers/shared_prefs_provider.dart';
 import 'package:civic_connect/core/services/hive/hive_services.dart';
 import 'package:civic_connect/core/services/connectivity/network_info.dart';
@@ -102,17 +106,37 @@ class AuthViewModel extends Notifier<AuthState> {
   }
 
   Future<void> login(String email, String password) async {
-    state = state.copyWith(status: AuthStatus.loading);
+    state = state.copyWith(status: AuthStatus.loading, errorMessage: null);
     final params = LoginParams(email: email, password: password);
-    final result = await ref.read(loginUsecaseProvider).call(params);
-    result.fold(
-      (failure) => state = state.copyWith(
+    try {
+      late final Either<Failure, AuthEntity> result;
+      try {
+        result = await ref
+            .read(loginUsecaseProvider)
+            .call(params)
+            .timeout(const Duration(seconds: 20));
+      } on TimeoutException {
+        result = const Left(
+          ApiFailure(
+            message:
+                'Login timed out. Check that the backend is running and you used the correct dart-defines for simulator vs device.',
+          ),
+        );
+      }
+      result.fold(
+        (failure) => state = state.copyWith(
+          status: AuthStatus.error,
+          errorMessage: failure.message,
+        ),
+        (user) => state =
+            state.copyWith(status: AuthStatus.authenticated, user: user),
+      );
+    } catch (e) {
+      state = state.copyWith(
         status: AuthStatus.error,
-        errorMessage: failure.message,
-      ),
-      (user) =>
-          state = state.copyWith(status: AuthStatus.authenticated, user: user),
-    );
+        errorMessage: e.toString().replaceAll('Exception: ', ''),
+      );
+    }
   }
 
   Future<void> updateProfilePicture(String imagePath) async {
@@ -147,35 +171,69 @@ class AuthViewModel extends Notifier<AuthState> {
           ? user.fullName
           : sanitizedName;
       String? resolvedProfilePicture = user.profilePicture;
+      String? resolvedUsername = user.username;
+      String? resolvedRole = user.role;
 
-      if (imagePath != null && imagePath.trim().isNotEmpty) {
-        final isOnline = await ref.read(networkInfoProvider).isConnected;
-        if (isOnline) {
-          try {
-            final response = await ref
-                .read(apiClientProvider)
-                .uploadFile(ApiEndpoints.profilePicture, imagePath);
-            if (response.statusCode == 200) {
+      final isOnline = await ref.read(networkInfoProvider).isConnected;
+      final apiClient = ref.read(apiClientProvider);
+
+      if (isOnline) {
+        final names = resolvedName.split(' ');
+        final firstName = names.isNotEmpty ? names.first : '';
+        final lastName = names.length > 1 ? names.sublist(1).join(' ') : '.';
+
+        try {
+          final Response profileResponse;
+          if (imagePath != null && imagePath.trim().isNotEmpty) {
+            final formData = FormData.fromMap({
+              'firstName': firstName,
+              'lastName': lastName,
+              'profileImage': await MultipartFile.fromFile(
+                imagePath,
+                filename: imagePath.split('/').last,
+              ),
+            });
+            profileResponse = await apiClient.put(
+              ApiEndpoints.updateProfile,
+              data: formData,
+            );
+          } else {
+            profileResponse = await apiClient.put(
+              ApiEndpoints.updateProfile,
+              data: {
+                'firstName': firstName,
+                'lastName': lastName,
+              },
+            );
+          }
+
+          if (profileResponse.statusCode == 200) {
+            final data = profileResponse.data['data'] as Map<String, dynamic>?;
+            if (data != null) {
+              resolvedUsername = data['username'] as String? ?? resolvedUsername;
+              resolvedRole = data['role'] as String? ?? resolvedRole;
               resolvedProfilePicture =
-                  response.data['data']['url'] as String? ?? imagePath;
-            } else {
-              resolvedProfilePicture = imagePath;
+                  data['profilePicture'] as String? ?? resolvedProfilePicture;
             }
-          } catch (_) {
+          }
+        } catch (_) {
+          if (imagePath != null && imagePath.trim().isNotEmpty) {
             resolvedProfilePicture = imagePath;
           }
-        } else {
-          resolvedProfilePicture = imagePath;
+          // Keep local update even if remote profile put fails.
         }
+      } else if (imagePath != null && imagePath.trim().isNotEmpty) {
+        resolvedProfilePicture = imagePath;
       }
 
       final updatedUser = AuthEntity(
         authId: user.authId,
         email: user.email,
         fullName: resolvedName,
+        username: resolvedUsername,
         password: user.password,
         profilePicture: resolvedProfilePicture,
-        role: user.role,
+        role: resolvedRole,
       );
 
       final hiveModel = AuthHiveModel.fromEntity(updatedUser);
@@ -224,6 +282,10 @@ class AuthViewModel extends Notifier<AuthState> {
   }
 
   void resetState() {
-    state = AuthState.initial();
+    // Keep authenticated user info if already logged in; only clear transient status/error.
+    state = state.copyWith(
+      status: state.user == null ? AuthStatus.initial : AuthStatus.authenticated,
+      errorMessage: null,
+    );
   }
 }

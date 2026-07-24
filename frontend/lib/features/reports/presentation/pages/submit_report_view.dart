@@ -4,9 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:civic_connect/app/theme/my_theme.dart';
+import 'package:civic_connect/app/theme/app_typography.dart';
+import 'package:civic_connect/app/theme/app_spacing.dart';
 import 'package:civic_connect/core/utils/snackbar_utils.dart';
 import 'package:civic_connect/features/reports/presentation/state/report_state.dart';
 import 'package:civic_connect/features/reports/presentation/view_model/report_view_model.dart';
+import 'package:civic_connect/features/sensors/presentation/state/sensor_state.dart';
+
+/// Filled by light/shake sensors before switching to the Submit tab.
+final reportDraftProvider = StateProvider<ReportSuggestion?>((ref) => null);
 
 class SubmitReportView extends ConsumerStatefulWidget {
   const SubmitReportView({super.key});
@@ -29,12 +35,62 @@ class _SubmitReportViewState extends ConsumerState<SubmitReportView> {
       Platform.environment.containsKey('SIMULATOR_DEVICE_NAME');
 
   final List<String> _categories = [
-    'Road',
+    'Maintenance',
     'Water',
     'Electricity',
     'Safety',
+    'Lighting',
+    'Parking',
+    'Noise',
     'Other',
   ];
+
+  IconData _categoryIcon(String category) {
+    switch (category.toLowerCase()) {
+      case 'maintenance':
+        return Icons.handyman_outlined;
+      case 'water':
+        return Icons.water_drop_outlined;
+      case 'electricity':
+        return Icons.lightbulb_outline;
+      case 'safety':
+        return Icons.security_outlined;
+      case 'lighting':
+        return Icons.wb_twilight_outlined;
+      case 'parking':
+        return Icons.local_parking_outlined;
+      case 'noise':
+        return Icons.volume_up_outlined;
+      default:
+        return Icons.more_horiz;
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(_applySensorDraft);
+  }
+
+  void _applySensorDraft() {
+    final draft = ref.read(reportDraftProvider);
+    if (draft == null) return;
+
+    setState(() {
+      if (draft.source == 'light') {
+        _selectedCategory = 'Lighting';
+      } else if (draft.category.isNotEmpty) {
+        _selectedCategory = draft.category;
+      }
+      if (draft.title.isNotEmpty) {
+        _titleController.text = draft.title;
+      }
+      if (draft.description.isNotEmpty) {
+        _descriptionController.text = draft.description;
+      }
+    });
+    ref.read(reportDraftProvider.notifier).state = null;
+  }
 
   @override
   void dispose() {
@@ -84,9 +140,8 @@ class _SubmitReportViewState extends ConsumerState<SubmitReportView> {
       }
     } catch (_) {
       if (mounted) {
-        final sourceName = source == ImageSource.camera
-            ? 'camera'
-            : 'photo library';
+        final sourceName =
+            source == ImageSource.camera ? 'camera' : 'photo library';
         SnackbarUtils.showError(
           context,
           'Unable to open $sourceName on this device right now.',
@@ -98,61 +153,103 @@ class _SubmitReportViewState extends ConsumerState<SubmitReportView> {
   void _showImageSourceDialog() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: MyTheme.darkNavy,
+      backgroundColor: MyTheme.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(MyTheme.radiusLg),
+        ),
       ),
       builder: (context) {
         return SafeArea(
-          child: Wrap(
-            children: [
-              ListTile(
-                leading: const Icon(
-                  Icons.photo_library,
-                  color: MyTheme.civicBlue,
-                ),
-                title: const Text(
-                  'Gallery',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontFamily: 'MontserratRegular',
-                  ),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickImage(ImageSource.gallery);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.camera_alt, color: MyTheme.civicBlue),
-                title: const Text(
-                  'Camera',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontFamily: 'MontserratRegular',
-                  ),
-                ),
-                enabled: !_isIosSimulator,
-                onTap: _isIosSimulator
-                    ? null
-                    : () {
-                        Navigator.pop(context);
-                        _pickImage(ImageSource.camera);
-                      },
-              ),
-              if (_isIosSimulator)
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
-                  child: Text(
-                    'Camera is unavailable in the iOS Simulator. Use Gallery instead.',
-                    style: TextStyle(
-                      color: Color(0xFF6B8FAF),
-                      fontFamily: 'MontserratRegular',
-                      fontSize: 12,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.md,
+              AppSpacing.lg,
+              AppSpacing.md,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: MyTheme.border,
+                      borderRadius: BorderRadius.circular(999),
                     ),
                   ),
                 ),
-            ],
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  'Add a photo',
+                  style: AppTypography.titleSm(MyTheme.textPrimary),
+                ),
+                const SizedBox(height: AppSpacing.xxs),
+                Text(
+                  'A clear photo helps management resolve the issue faster.',
+                  style: AppTypography.bodySm(MyTheme.textSecondary),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Container(
+                    padding: const EdgeInsets.all(AppSpacing.sm),
+                    decoration: AppDecorations.iconWell(),
+                    child: const Icon(
+                      Icons.photo_library_outlined,
+                      color: MyTheme.primary,
+                    ),
+                  ),
+                  title: Text(
+                    'Choose from Gallery',
+                    style: AppTypography.titleSm(MyTheme.textPrimary),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickImage(ImageSource.gallery);
+                  },
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  enabled: !_isIosSimulator,
+                  leading: Container(
+                    padding: const EdgeInsets.all(AppSpacing.sm),
+                    decoration: AppDecorations.iconWell(),
+                    child: Icon(
+                      Icons.camera_alt_outlined,
+                      color: _isIosSimulator
+                          ? MyTheme.disabled
+                          : MyTheme.primary,
+                    ),
+                  ),
+                  title: Text(
+                    'Take a Photo',
+                    style: AppTypography.titleSm(
+                      _isIosSimulator
+                          ? MyTheme.textSecondary
+                          : MyTheme.textPrimary,
+                    ),
+                  ),
+                  onTap: _isIosSimulator
+                      ? null
+                      : () {
+                          Navigator.pop(context);
+                          _pickImage(ImageSource.camera);
+                        },
+                ),
+                if (_isIosSimulator) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'Camera is unavailable in the iOS Simulator. Use Gallery instead.',
+                    style: AppTypography.caption(MyTheme.textSecondary),
+                  ),
+                ],
+                const SizedBox(height: AppSpacing.xs),
+              ],
+            ),
           ),
         );
       },
@@ -161,9 +258,7 @@ class _SubmitReportViewState extends ConsumerState<SubmitReportView> {
 
   Future<void> _submitReport() async {
     if (!_formKey.currentState!.validate()) return;
-    await ref
-        .read(reportViewModelProvider.notifier)
-        .submitReport(
+    await ref.read(reportViewModelProvider.notifier).submitReport(
           _titleController.text.trim(),
           _descriptionController.text.trim(),
           _selectedCategory ?? 'Other',
@@ -176,11 +271,16 @@ class _SubmitReportViewState extends ConsumerState<SubmitReportView> {
   Widget build(BuildContext context) {
     final reportState = ref.watch(reportViewModelProvider);
 
+    ref.listen<ReportSuggestion?>(reportDraftProvider, (previous, next) {
+      if (next != null) {
+        _applySensorDraft();
+      }
+    });
+
     ref.listen<ReportState>(reportViewModelProvider, (previous, next) {
-      if (next.isSuccess) {
+      if (next.isSuccess && previous?.isSuccess != true) {
         SnackbarUtils.showSuccess(context, 'Issue submitted successfully!');
         ref.read(reportViewModelProvider.notifier).resetState();
-        // Reset form inputs
         _titleController.clear();
         _descriptionController.clear();
         _locationController.clear();
@@ -188,209 +288,366 @@ class _SubmitReportViewState extends ConsumerState<SubmitReportView> {
           _selectedCategory = null;
           _imagePath = null;
         });
-      } else if (next.errorMessage != null) {
+      } else if (next.errorMessage != null &&
+          next.errorMessage != previous?.errorMessage) {
         SnackbarUtils.showError(context, next.errorMessage!);
         ref.read(reportViewModelProvider.notifier).resetState();
       }
     });
 
-    return Stack(
-      children: [
-        Scaffold(
-          backgroundColor: MyTheme.darkBackground,
-          appBar: AppBar(
-            title: const Text(
-              'Submit Report',
-              style: TextStyle(
-                fontFamily: 'MontserratBold',
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            backgroundColor: MyTheme.darkNavy,
-            elevation: 0,
-            centerTitle: false,
-          ),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(20.0),
+    return Scaffold(
+      backgroundColor: MyTheme.background,
+      appBar: AppBar(
+        title: Text(
+          'Submit Report',
+          style: AppTypography.title(MyTheme.textPrimary),
+        ),
+        backgroundColor: MyTheme.surface,
+        elevation: 0,
+        centerTitle: false,
+      ),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: AppSpacing.pageAll,
             child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text(
-                    'Report a Community Issue',
-                    style: TextStyle(
-                      fontFamily: 'MontserratBold',
-                      fontSize: 18,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
+                  Container(
+                    padding: AppSpacing.cardPadding,
+                    decoration: AppDecorations.card(
+                      color: MyTheme.primaryLight.withValues(alpha: 0.55),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'Provide details about the problem. City officials and community members will see this issue.',
-                    style: TextStyle(
-                      fontFamily: 'MontserratRegular',
-                      fontSize: 13,
-                      color: Color(0xFF6B8FAF),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  // Title
-                  TextFormField(
-                    controller: _titleController,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontFamily: 'MontserratRegular',
-                    ),
-                    decoration: const InputDecoration(
-                      labelText: 'Title / Issue Name',
-                      hintText: 'e.g. Broken streetlight, pothole',
-                    ),
-                    validator: (v) => (v == null || v.isEmpty)
-                        ? 'Please enter a title'
-                        : null,
-                  ),
-                  const SizedBox(height: 16),
-                  // Category Dropdown
-                  DropdownButtonFormField<String>(
-                    initialValue: _selectedCategory,
-                    dropdownColor: MyTheme.darkNavy,
-                    decoration: const InputDecoration(labelText: 'Category'),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontFamily: 'MontserratRegular',
-                    ),
-                    items: _categories.map((cat) {
-                      return DropdownMenuItem<String>(
-                        value: cat,
-                        child: Text(
-                          cat,
-                          style: const TextStyle(color: Colors.white),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(AppSpacing.sm),
+                          decoration: AppDecorations.iconWell(),
+                          child: const Icon(
+                            Icons.report_gmailerrorred_outlined,
+                            color: MyTheme.primary,
+                          ),
                         ),
-                      );
-                    }).toList(),
-                    onChanged: (val) => setState(() => _selectedCategory = val),
-                    validator: (v) =>
-                        v == null ? 'Please select a category' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  // Location
-                  TextFormField(
-                    controller: _locationController,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontFamily: 'MontserratRegular',
-                    ),
-                    decoration: const InputDecoration(
-                      labelText: 'Location / Landmark',
-                      hintText: 'e.g. Main Street, near City Park',
-                      prefixIcon: Icon(
-                        Icons.location_on_outlined,
-                        color: Color(0xFF6B8FAF),
-                      ),
-                    ),
-                    validator: (v) => (v == null || v.isEmpty)
-                        ? 'Please specify location'
-                        : null,
-                  ),
-                  const SizedBox(height: 16),
-                  // Description
-                  TextFormField(
-                    controller: _descriptionController,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontFamily: 'MontserratRegular',
-                    ),
-                    maxLines: 4,
-                    decoration: const InputDecoration(
-                      labelText: 'Detailed Description',
-                      hintText:
-                          'Describe the issue so it can be resolved quickly...',
-                      alignLabelWithHint: true,
-                    ),
-                    validator: (v) => (v == null || v.isEmpty)
-                        ? 'Please enter a description'
-                        : null,
-                  ),
-                  const SizedBox(height: 20),
-                  // Image Picker Box
-                  const Text(
-                    'Attach Photo (Optional)',
-                    style: TextStyle(
-                      fontFamily: 'MontserratBold',
-                      fontSize: 14,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  GestureDetector(
-                    onTap: _showImageSourceDialog,
-                    child: Container(
-                      height: 150,
-                      decoration: BoxDecoration(
-                        color: MyTheme.darkNavy,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFF1E293B)),
-                      ),
-                      child: _imagePath == null
-                          ? const Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.camera_enhance_outlined,
-                                  size: 40,
-                                  color: Color(0xFF6B8FAF),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Report a building issue',
+                                style: AppTypography.titleSm(
+                                  MyTheme.textPrimary,
                                 ),
-                                SizedBox(height: 8),
-                                Text(
-                                  'Tap to capture or upload photo',
-                                  style: TextStyle(
-                                    fontFamily: 'MontserratRegular',
-                                    color: Color(0xFF6B8FAF),
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ],
-                            )
-                          : ClipRRect(
-                              borderRadius: BorderRadius.circular(14),
-                              child: Image.file(
-                                File(_imagePath!),
-                                width: double.infinity,
-                                fit: BoxFit.cover,
                               ),
-                            ),
+                              const SizedBox(height: AppSpacing.xxs),
+                              Text(
+                                'Clear details help management respond quickly.',
+                                style: AppTypography.bodySm(
+                                  MyTheme.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 32),
-                  // Submit Button
-                  ElevatedButton(
-                    onPressed: reportState.isLoading ? null : _submitReport,
-                    child: reportState.isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text(
-                            'Submit Issue',
-                            style: TextStyle(
-                              fontFamily: 'MontserratBold',
-                              fontSize: 16,
+                  const SizedBox(height: AppSpacing.lg),
+                  Container(
+                    padding: AppSpacing.cardPadding,
+                    decoration: AppDecorations.card(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'Issue details',
+                          style: AppTypography.titleSm(MyTheme.textPrimary),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        TextFormField(
+                          controller: _titleController,
+                          style: AppTypography.body(MyTheme.textPrimary),
+                          textInputAction: TextInputAction.next,
+                          decoration: const InputDecoration(
+                            labelText: 'Title',
+                            hintText: 'e.g. Leaking pipe in Block A',
+                            prefixIcon: Icon(
+                              Icons.title_rounded,
+                              color: MyTheme.textSecondary,
                             ),
                           ),
+                          validator: (v) => (v == null || v.isEmpty)
+                              ? 'Please enter a title'
+                              : null,
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        DropdownButtonFormField<String>(
+                          initialValue: _selectedCategory,
+                          dropdownColor: MyTheme.surface,
+                          isExpanded: true,
+                          decoration: const InputDecoration(
+                            labelText: 'Category',
+                            prefixIcon: Icon(
+                              Icons.category_outlined,
+                              color: MyTheme.textSecondary,
+                            ),
+                          ),
+                          style: AppTypography.body(MyTheme.textPrimary),
+                          selectedItemBuilder: (context) {
+                            return _categories.map((cat) {
+                              return Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  cat,
+                                  style: AppTypography.body(
+                                    MyTheme.textPrimary,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              );
+                            }).toList();
+                          },
+                          items: _categories.map((cat) {
+                            return DropdownMenuItem<String>(
+                              value: cat,
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    _categoryIcon(cat),
+                                    size: 18,
+                                    color: MyTheme.primary,
+                                  ),
+                                  const SizedBox(width: AppSpacing.xs),
+                                  Expanded(
+                                    child: Text(
+                                      cat,
+                                      style: AppTypography.body(
+                                        MyTheme.textPrimary,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (val) =>
+                              setState(() => _selectedCategory = val),
+                          validator: (v) =>
+                              v == null ? 'Please select a category' : null,
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        TextFormField(
+                          controller: _locationController,
+                          style: AppTypography.body(MyTheme.textPrimary),
+                          textInputAction: TextInputAction.next,
+                          decoration: const InputDecoration(
+                            labelText: 'Location',
+                            hintText: 'e.g. Block B, 3rd floor near lift',
+                            prefixIcon: Icon(
+                              Icons.location_on_outlined,
+                              color: MyTheme.textSecondary,
+                            ),
+                          ),
+                          validator: (v) => (v == null || v.isEmpty)
+                              ? 'Please specify location'
+                              : null,
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        TextFormField(
+                          controller: _descriptionController,
+                          style: AppTypography.body(MyTheme.textPrimary),
+                          maxLines: 5,
+                          decoration: const InputDecoration(
+                            labelText: 'Description',
+                            hintText:
+                                'Describe the issue so it can be resolved quickly…',
+                            alignLabelWithHint: true,
+                          ),
+                          validator: (v) => (v == null || v.isEmpty)
+                              ? 'Please enter a description'
+                              : null,
+                        ),
+                      ],
+                    ),
                   ),
+                  const SizedBox(height: AppSpacing.lg),
+                  Container(
+                    padding: AppSpacing.cardPadding,
+                    decoration: AppDecorations.card(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Photo evidence',
+                                style: AppTypography.titleSm(
+                                  MyTheme.textPrimary,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              'Optional',
+                              style: AppTypography.caption(
+                                MyTheme.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: _showImageSourceDialog,
+                            borderRadius:
+                                BorderRadius.circular(MyTheme.radiusLg),
+                            child: Ink(
+                              height: 168,
+                              decoration: BoxDecoration(
+                                color: MyTheme.lightBg,
+                                borderRadius:
+                                    BorderRadius.circular(MyTheme.radiusLg),
+                                border: Border.all(
+                                  color: MyTheme.border,
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: _imagePath == null
+                                  ? Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(
+                                            AppSpacing.sm,
+                                          ),
+                                          decoration: AppDecorations.iconWell(),
+                                          child: const Icon(
+                                            Icons.add_a_photo_outlined,
+                                            color: MyTheme.primary,
+                                            size: 28,
+                                          ),
+                                        ),
+                                        const SizedBox(height: AppSpacing.sm),
+                                        Text(
+                                          'Tap to add a photo',
+                                          style: AppTypography.titleSm(
+                                            MyTheme.textPrimary,
+                                          ),
+                                        ),
+                                        const SizedBox(height: AppSpacing.xxs),
+                                        Text(
+                                          'Camera or gallery',
+                                          style: AppTypography.caption(
+                                            MyTheme.textSecondary,
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : Stack(
+                                      fit: StackFit.expand,
+                                      children: [
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(
+                                            MyTheme.radiusLg,
+                                          ),
+                                          child: Image.file(
+                                            File(_imagePath!),
+                                            fit: BoxFit.cover,
+                                          ),
+                                        ),
+                                        Positioned(
+                                          top: AppSpacing.xs,
+                                          right: AppSpacing.xs,
+                                          child: Material(
+                                            color: MyTheme.surface,
+                                            shape: const CircleBorder(),
+                                            child: IconButton(
+                                              tooltip: 'Remove photo',
+                                              icon: const Icon(
+                                                Icons.close_rounded,
+                                                size: 18,
+                                              ),
+                                              onPressed: () => setState(
+                                                () => _imagePath = null,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        Positioned(
+                                          left: AppSpacing.xs,
+                                          bottom: AppSpacing.xs,
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: AppSpacing.xs,
+                                              vertical: AppSpacing.xxs,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: MyTheme.surface.withValues(
+                                                alpha: 0.92,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                MyTheme.radiusSm,
+                                              ),
+                                            ),
+                                            child: Text(
+                                              'Tap to change',
+                                              style: AppTypography.caption(
+                                                MyTheme.textSecondary,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  ElevatedButton.icon(
+                    onPressed: reportState.isLoading ? null : _submitReport,
+                    icon: reportState.isLoading
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.2,
+                              color: MyTheme.textOnPrimary,
+                            ),
+                          )
+                        : const Icon(Icons.send_rounded, size: 18),
+                    label: Text(
+                      reportState.isLoading ? 'Submitting…' : 'Submit Issue',
+                      style: AppTypography.button(MyTheme.textOnPrimary),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    'Your report will appear as Pending until management updates it.',
+                    textAlign: TextAlign.center,
+                    style: AppTypography.caption(MyTheme.textSecondary),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
                 ],
               ),
             ),
           ),
-        ),
-        // Loading Overlay
-        if (reportState.isLoading)
-          Container(
-            color: Colors.black.withValues(alpha: 0.5),
-            child: const Center(
-              child: CircularProgressIndicator(color: MyTheme.civicBlue),
+          if (reportState.isLoading)
+            Container(
+              color: MyTheme.textPrimary.withValues(alpha: 0.18),
+              child: const Center(
+                child: CircularProgressIndicator(color: MyTheme.primary),
+              ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 }

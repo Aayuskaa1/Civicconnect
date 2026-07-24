@@ -19,7 +19,7 @@ void main() {
     );
 
     expect(find.text('CivicConnect'), findsOneWidget);
-    expect(find.text('Connect. Report. Change.'), findsOneWidget);
+    expect(find.text('Report and track building issues.'), findsOneWidget);
     await tester.pump(const Duration(seconds: 4));
   });
 }

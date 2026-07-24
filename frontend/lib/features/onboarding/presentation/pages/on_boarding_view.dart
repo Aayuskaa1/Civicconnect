@@ -16,20 +16,20 @@ class _OnBoardingViewState extends State<OnBoardingView> {
     {
       'title': 'Welcome to CivicConnect',
       'desc':
-          'Your direct bridge to active citizenship and local community engagement. Report issues and join hands to improve our home.',
-      'icon': Icons.handshake_outlined,
+          'Report building issues and help keep your complex running smoothly.',
+      'icon': Icons.apartment_outlined,
     },
     {
       'title': 'Report Issues Easily',
       'desc':
-          'Snap photos of potholes, public trash piles, or broken streetlights. Submit reports instantly directly to city officials.',
+          'Snap photos of leaks, power issues, safety concerns, parking problems, or noise. Submit them to building management.',
       'icon': Icons.report_problem_outlined,
     },
     {
-      'title': 'Track & See Change',
+      'title': 'Ask AI Anytime',
       'desc':
-          'Monitor the progress of your reports in real-time. Witness direct action and see how you can make a neighborhood impact.',
-      'icon': Icons.trending_up,
+          'Not sure which category to pick or how statuses work? Open Ask AI for quick tips.',
+      'icon': Icons.auto_awesome,
     },
   ];
 
@@ -71,19 +71,17 @@ class _OnBoardingViewState extends State<OnBoardingView> {
                         Text(
                           'CivicConnect',
                           style: TextStyle(
-                            fontFamily: 'MontserratExtraBold',
+                            fontWeight: FontWeight.w800,
                             fontSize: 18,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                            color: MyTheme.textPrimary,
                           ),
                         ),
                         SizedBox(height: 2),
                         Text(
-                          'Community Help Desk',
+                          'For your complex',
                           style: TextStyle(
-                            fontFamily: 'MontserratRegular',
                             fontSize: 12,
-                            color: Color(0xFF6B8FAF),
+                            color: MyTheme.mutedText,
                           ),
                         ),
                       ],
@@ -94,9 +92,8 @@ class _OnBoardingViewState extends State<OnBoardingView> {
                         child: const Text(
                           'Skip',
                           style: TextStyle(
-                            fontFamily: 'MontserratBold',
-                            color: MyTheme.civicBlue,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w700,
+                            color: MyTheme.brandBlue,
                           ),
                         ),
                       ),
@@ -130,11 +127,11 @@ class _OnBoardingViewState extends State<OnBoardingView> {
                               color: MyTheme.darkNavy,
                               borderRadius: BorderRadius.circular(28),
                               border: Border.all(
-                                color: const Color(0xFF1E293B),
+                                color: MyTheme.surfaceElevated,
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: MyTheme.civicBlue.withValues(
+                                  color: MyTheme.brandBlue.withValues(
                                     alpha: 0.12,
                                   ),
                                   blurRadius: 24,
@@ -150,13 +147,13 @@ class _OnBoardingViewState extends State<OnBoardingView> {
                                     color: MyTheme.darkBackground,
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: const Color(0xFF1E293B),
+                                      color: MyTheme.surfaceElevated,
                                     ),
                                   ),
                                   child: Icon(
                                     data['icon'] as IconData,
                                     size: 72,
-                                    color: MyTheme.civicBlue,
+                                    color: MyTheme.brandBlue,
                                   ),
                                 ),
                                 const SizedBox(height: 28),
@@ -164,10 +161,9 @@ class _OnBoardingViewState extends State<OnBoardingView> {
                                   data['title'] as String,
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(
-                                    fontFamily: 'MontserratExtraBold',
+                                    fontWeight: FontWeight.w800,
                                     fontSize: 26,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
+                                    color: MyTheme.textPrimary,
                                   ),
                                 ),
                                 const SizedBox(height: 16),
@@ -175,9 +171,8 @@ class _OnBoardingViewState extends State<OnBoardingView> {
                                   data['desc'] as String,
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(
-                                    fontFamily: 'MontserratRegular',
                                     fontSize: 14,
-                                    color: Color(0xFF6B8FAF),
+                                    color: MyTheme.mutedText,
                                     height: 1.7,
                                   ),
                                 ),
@@ -200,7 +195,7 @@ class _OnBoardingViewState extends State<OnBoardingView> {
                   decoration: BoxDecoration(
                     color: MyTheme.darkNavy,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFF1E293B)),
+                    border: Border.all(color: MyTheme.surfaceElevated),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -215,8 +210,8 @@ class _OnBoardingViewState extends State<OnBoardingView> {
                             height: 8,
                             decoration: BoxDecoration(
                               color: _currentPage == index
-                                  ? MyTheme.civicBlue
-                                  : const Color(0xFF334155),
+                                  ? MyTheme.brandBlue
+                                  : MyTheme.disabled,
                               borderRadius: BorderRadius.circular(4),
                             ),
                           ),
@@ -240,11 +235,11 @@ class _OnBoardingViewState extends State<OnBoardingView> {
                             vertical: 16,
                           ),
                           decoration: BoxDecoration(
-                            color: MyTheme.civicBlue,
+                            color: MyTheme.brandBlue,
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: MyTheme.civicBlue.withValues(
+                                color: MyTheme.brandBlue.withValues(
                                   alpha: 0.24,
                                 ),
                                 blurRadius: 10,
@@ -257,16 +252,15 @@ class _OnBoardingViewState extends State<OnBoardingView> {
                               Text(
                                 isLastPage ? 'Get Started' : 'Next',
                                 style: const TextStyle(
-                                  fontFamily: 'MontserratBold',
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: FontWeight.w700,
+                                  color: MyTheme.textOnPrimary,
                                 ),
                               ),
                               if (!isLastPage) ...[
                                 const SizedBox(width: 8),
                                 const Icon(
                                   Icons.arrow_forward_rounded,
-                                  color: Colors.white,
+                                  color: MyTheme.textOnPrimary,
                                   size: 16,
                                 ),
                               ],

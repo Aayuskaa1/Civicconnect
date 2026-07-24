@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:civic_connect/app/theme/my_theme.dart';
+import 'package:civic_connect/app/theme/app_typography.dart';
+import 'package:civic_connect/app/theme/app_spacing.dart';
 import 'package:civic_connect/core/utils/snackbar_utils.dart';
 import 'package:civic_connect/features/auth/presentation/state/auth_state.dart';
 import 'package:civic_connect/features/auth/presentation/view_model/auth_view_model.dart';
@@ -37,177 +40,225 @@ class _LoginViewState extends ConsumerState<LoginView> {
     final authState = ref.watch(authViewModelProvider);
 
     ref.listen<AuthState>(authViewModelProvider, (previous, next) {
-      if (next.status == AuthStatus.authenticated && next.user != null) {
-        SnackbarUtils.showSuccess(context, 'Welcome back, ${next.user!.fullName}!');
-        ref.read(authViewModelProvider.notifier).resetState();
+      if (next.status == AuthStatus.authenticated &&
+          next.user != null &&
+          previous?.status != AuthStatus.authenticated) {
+        SnackbarUtils.showSuccess(
+          context,
+          'Welcome back, ${next.user!.fullName}!',
+        );
         Navigator.pushReplacementNamed(context, '/dashboard');
-      } else if (next.status == AuthStatus.error && next.errorMessage != null) {
+      } else if (next.status == AuthStatus.error &&
+          next.errorMessage != null &&
+          previous?.status != AuthStatus.error) {
         SnackbarUtils.showError(context, next.errorMessage!);
         ref.read(authViewModelProvider.notifier).resetState();
       }
     });
 
     return Scaffold(
-      backgroundColor: const Color(0xFF001A30),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.hub_outlined,
-                  size: 72,
-                  color: Colors.white,
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'CivicConnect',
-                  style: TextStyle(
-                    fontFamily: 'MontserratExtraBold',
-                    fontSize: 32,
-                    color: Colors.white,
-                    letterSpacing: 1.2,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [MyTheme.primaryLight, MyTheme.background],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg,
+                vertical: AppSpacing.md,
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: AppDecorations.cardFlat(
+                      color: MyTheme.primaryLight,
+                    ),
+                    child: const Icon(
+                      Icons.apartment_rounded,
+                      size: 40,
+                      color: MyTheme.primary,
+                    ),
                   ),
-                ),
-                const Text(
-                  'Connect. Report. Change.',
-                  style: TextStyle(
-                    fontFamily: 'MontserratItalic',
-                    fontSize: 14,
-                    color: Color(0xFF6B8FAF),
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    'CivicConnect',
+                    style: AppTypography.display(MyTheme.textPrimary),
                   ),
-                ),
-                const SizedBox(height: 36),
-                Card(
-                  color: Colors.white,
-                  elevation: 8,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'For your building community',
+                    style: AppTypography.body(MyTheme.textSecondary),
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(28.0),
+                  const SizedBox(height: AppSpacing.xl),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    decoration: AppDecorations.card(),
                     child: Form(
                       key: _formKey,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          const Text(
+                          Text(
                             'Sign In',
                             textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontFamily: 'MontserratBold',
-                              fontSize: 22,
-                              color: Color(0xFF001A30),
-                            ),
+                            style: AppTypography.headline(MyTheme.textPrimary),
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            'Report and track building issues in your complex.',
+                            textAlign: TextAlign.center,
+                            style: AppTypography.bodySm(MyTheme.textSecondary),
+                          ),
+                          const SizedBox(height: AppSpacing.lg),
                           TextFormField(
                             controller: _emailController,
-                            style: const TextStyle(color: Color(0xFF001A30), fontFamily: 'MontserratRegular'),
+                            style: const TextStyle(
+                              color: MyTheme.textOnLight,
+                            ),
                             keyboardType: TextInputType.emailAddress,
+                            textInputAction: TextInputAction.next,
                             decoration: InputDecoration(
                               labelText: 'Email Address',
-                              labelStyle: const TextStyle(color: Color(0xFF6B8FAF), fontFamily: 'MontserratRegular'),
-                              prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF6B8FAF)),
+                              labelStyle: const TextStyle(
+                                color: MyTheme.mutedText,
+                              ),
+                              prefixIcon: const Icon(
+                                Icons.email_outlined,
+                                color: MyTheme.mutedText,
+                              ),
                               filled: true,
-                              fillColor: const Color(0xFFF0F4FF),
+                              fillColor: MyTheme.lightBg,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(14),
                                 borderSide: BorderSide.none,
                               ),
                             ),
                             validator: (v) {
-                              if (v == null || v.isEmpty) return 'Please enter your email';
-                              if (!v.contains('@')) return 'Enter a valid email';
+                              if (v == null || v.isEmpty) {
+                                return 'Please enter your email';
+                              }
+                              if (!v.contains('@')) {
+                                return 'Enter a valid email';
+                              }
                               return null;
                             },
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 14),
                           TextFormField(
                             controller: _passwordController,
-                            style: const TextStyle(color: Color(0xFF001A30), fontFamily: 'MontserratRegular'),
+                            style: const TextStyle(
+                              color: MyTheme.textOnLight,
+                            ),
                             obscureText: _obscurePassword,
+                            textInputAction: TextInputAction.done,
+                            onFieldSubmitted: (_) => _handleLogin(),
                             decoration: InputDecoration(
                               labelText: 'Password',
-                              labelStyle: const TextStyle(color: Color(0xFF6B8FAF), fontFamily: 'MontserratRegular'),
-                              prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF6B8FAF)),
+                              labelStyle: const TextStyle(
+                                color: MyTheme.mutedText,
+                              ),
+                              prefixIcon: const Icon(
+                                Icons.lock_outline,
+                                color: MyTheme.mutedText,
+                              ),
                               suffixIcon: IconButton(
                                 icon: Icon(
-                                  _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                                  color: const Color(0xFF6B8FAF),
+                                  _obscurePassword
+                                      ? Icons.visibility_outlined
+                                      : Icons.visibility_off_outlined,
+                                  color: MyTheme.mutedText,
                                 ),
-                                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                                onPressed: () => setState(
+                                  () => _obscurePassword = !_obscurePassword,
+                                ),
                               ),
                               filled: true,
-                              fillColor: const Color(0xFFF0F4FF),
+                              fillColor: MyTheme.lightBg,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(14),
                                 borderSide: BorderSide.none,
                               ),
                             ),
                             validator: (v) {
-                              if (v == null || v.isEmpty) return 'Please enter your password';
-                              if (v.length < 6) return 'Password must be at least 6 characters';
+                              if (v == null || v.isEmpty) {
+                                return 'Please enter your password';
+                              }
+                              if (v.length < 6) {
+                                return 'Password must be at least 6 characters';
+                              }
                               return null;
                             },
                           ),
-                          const SizedBox(height: 28),
+                          const SizedBox(height: 24),
                           ElevatedButton(
-                            onPressed: authState.status == AuthStatus.loading ? null : _handleLogin,
+                            onPressed: authState.status == AuthStatus.loading
+                                ? null
+                                : _handleLogin,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF001020),
-                              foregroundColor: Colors.white,
-                              minimumSize: const Size.fromHeight(55),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
+                              backgroundColor: MyTheme.primary,
+                              foregroundColor: MyTheme.textOnPrimary,
+                              disabledBackgroundColor: MyTheme.disabled,
                             ),
                             child: authState.status == AuthStatus.loading
-                                ? const CircularProgressIndicator(color: Colors.white)
+                                ? const SizedBox(
+                                    height: 22,
+                                    width: 22,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.4,
+                                      color: MyTheme.textOnPrimary,
+                                    ),
+                                  )
                                 : const Text(
                                     'Login',
                                     style: TextStyle(
-                                      fontFamily: 'MontserratBold',
+                                      fontWeight: FontWeight.w700,
                                       fontSize: 16,
                                     ),
                                   ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 18),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               const Text(
                                 "Don't have an account? ",
                                 style: TextStyle(
-                                  color: Color(0xFF6B8FAF),
-                                  fontFamily: 'MontserratRegular',
+                                  color: MyTheme.mutedText,
                                   fontSize: 13,
                                 ),
                               ),
                               GestureDetector(
                                 onTap: () {
-                                  ref.read(authViewModelProvider.notifier).resetState();
+                                  ref
+                                      .read(authViewModelProvider.notifier)
+                                      .resetState();
                                   Navigator.pushNamed(context, '/signup');
                                 },
                                 child: const Text(
                                   'Sign Up',
                                   style: TextStyle(
-                                    color: Color(0xFF1A56DB),
-                                    fontFamily: 'MontserratBold',
+                                    color: MyTheme.primaryBlue,
+                                    fontWeight: FontWeight.w700,
                                     fontSize: 13,
                                   ),
                                 ),
-                              )
+                              ),
                             ],
                           ),
                         ],
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

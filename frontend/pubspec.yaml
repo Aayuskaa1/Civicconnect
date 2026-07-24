@@ -27,9 +27,14 @@ dependencies:
   path_provider: ^2.1.6
   dio_smart_retry: ^7.0.1
   pretty_dio_logger: ^1.4.0
+  google_fonts: ^8.2.0
+  sensors_plus: ^7.1.0
+  ambient_light: ^0.2.1
 
 dev_dependencies:
   flutter_test:
+    sdk: flutter
+  integration_test:
     sdk: flutter
   flutter_lints: ^6.0.0
   mockito: ^5.4.4
@@ -53,12 +58,3 @@ flutter:
     - assets/icons/
     - assets/fonts/
     - assests/images/
-  fonts:
-    - family: MontserratBold
-      fonts: [{ asset: assets/fonts/Montserrat-Bold.ttf }]
-    - family: MontserratExtraBold
-      fonts: [{ asset: assets/fonts/Montserrat-ExtraBold.ttf }]
-    - family: MontserratItalic
-      fonts: [{ asset: assets/fonts/Montserrat-Italic.ttf }]
-    - family: MontserratRegular
-      fonts: [{ asset: assets/fonts/Montserrat-Regular.ttf }]

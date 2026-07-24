@@ -1,23 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:civic_connect/app/theme/my_theme.dart';
 
 class SnackbarUtils {
-  SnackbarUtils._();
-
   static void showSuccess(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-            fontFamily: 'MontserratRegular',
-          ),
-        ),
-        backgroundColor: const Color(0xFF10B981), // statusResolved Green
+        content: Text(message),
+        backgroundColor: MyTheme.success,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        duration: const Duration(seconds: 3),
       ),
     );
   }
@@ -25,18 +15,9 @@ class SnackbarUtils {
   static void showError(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-            fontFamily: 'MontserratRegular',
-          ),
-        ),
-        backgroundColor: const Color(0xFFEF4444), // Crimson Red
+        content: Text(message),
+        backgroundColor: MyTheme.error,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        duration: const Duration(seconds: 3),
       ),
     );
   }

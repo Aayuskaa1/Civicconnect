@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Civic Connect</string>
+	<string>CivicConnect</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -27,7 +27,9 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>Allow CivicConnect to take photos for issue reports and profile updates.</string>
+	<string>Allow CivicConnect to take photos for issue reports, profile updates, and ambient light checks.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>Allow CivicConnect to use motion sensors for shake-to-report and safety bump detection.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Allow CivicConnect to connect to your local development server.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

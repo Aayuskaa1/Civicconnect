@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import authRouter from './routes/user.route';
 import reportRouter from './routes/report.route';
+import chatRouter from './routes/chat.route';
 import { errorHandler } from './middlewares/error.middleware';
 
 const app = express();
@@ -10,9 +11,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Routes
+// Shared CivicConnect API paths (same contract as CivicConnectWeb)
 app.use('/api/v1/auth', authRouter);
-app.use('/api/v1/reports', reportRouter);
+app.use('/api/v1/complaints', reportRouter);
+app.use('/api/v1/ai', chatRouter);
 app.use('/uploads', express.static('uploads'));
 
 // Global Error Handler

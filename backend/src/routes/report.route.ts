@@ -3,6 +3,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { ReportController } from '../controllers/report.controller';
+import { authenticate, requireAdmin } from '../middlewares/auth.middleware';
 
 const uploadsDir = path.resolve(process.cwd(), 'uploads');
 fs.mkdirSync(uploadsDir, { recursive: true });
@@ -21,10 +22,14 @@ const upload = multer({ storage });
 const router = Router();
 const reportController = new ReportController();
 
+// Shared CivicConnect API: /api/v1/complaints (same as CivicConnectWeb)
+router.use(authenticate);
+
+router.get('/me', reportController.getMyReports);
+router.get('/admin', requireAdmin, reportController.getReports);
 router.get('/', reportController.getReports);
-router.get('/user/:userId', reportController.getMyReports);
-router.get('/:reportId', reportController.getReportDetail);
 router.post('/', upload.single('image'), reportController.createReport);
-router.patch('/:reportId/status', reportController.updateReportStatus);
+router.patch('/:id/admin', requireAdmin, reportController.updateReportStatus);
+router.get('/:id', reportController.getReportDetail);
 
 export default router;

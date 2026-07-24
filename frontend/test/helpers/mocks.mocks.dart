@@ -163,4 +163,31 @@ class MockReportRepository extends _i1.Mock implements _i7.ReportRepository {
           ),
         )),
       ) as _i4.Future<_i2.Either<_i5.Failure, _i8.ReportEntity>>);
+
+  @override
+  _i4.Future<_i2.Either<_i5.Failure, _i8.ReportEntity>> updateReportStatus(
+    String? reportId,
+    String? status,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #updateReportStatus,
+          [
+            reportId,
+            status,
+          ],
+        ),
+        returnValue:
+            _i4.Future<_i2.Either<_i5.Failure, _i8.ReportEntity>>.value(
+                _FakeEither_0<_i5.Failure, _i8.ReportEntity>(
+          this,
+          Invocation.method(
+            #updateReportStatus,
+            [
+              reportId,
+              status,
+            ],
+          ),
+        )),
+      ) as _i4.Future<_i2.Either<_i5.Failure, _i8.ReportEntity>>);
 }

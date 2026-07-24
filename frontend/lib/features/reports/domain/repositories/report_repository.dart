@@ -6,4 +6,5 @@ abstract class ReportRepository {
   Future<Either<Failure, List<ReportEntity>>> getReports();
   Future<Either<Failure, List<ReportEntity>>> getMyReports(String userId);
   Future<Either<Failure, ReportEntity>> submitReport(ReportEntity report, String? imagePath);
+  Future<Either<Failure, ReportEntity>> updateReportStatus(String reportId, String status);
 }

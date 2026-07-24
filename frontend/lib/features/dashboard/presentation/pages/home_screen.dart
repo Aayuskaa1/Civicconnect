@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:civic_connect/app/theme/my_theme.dart';
+import 'package:civic_connect/app/theme/app_typography.dart';
+import 'package:civic_connect/app/theme/app_spacing.dart';
 import 'package:civic_connect/features/auth/presentation/view_model/auth_view_model.dart';
 import 'package:civic_connect/features/reports/domain/entities/report_entity.dart';
 import 'package:civic_connect/features/reports/presentation/pages/report_detail_view.dart';
 import 'package:civic_connect/features/reports/presentation/view_model/report_view_model.dart';
 import 'package:civic_connect/features/dashboard/presentation/view_models/bottom_navigation_viewmodel.dart';
+import 'package:civic_connect/features/sensors/presentation/widgets/sensor_host.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -18,31 +21,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   String _selectedCategory = 'All';
   final List<String> _categories = [
     'All',
-    'Road',
+    'Maintenance',
     'Water',
     'Electricity',
     'Safety',
+    'Lighting',
+    'Parking',
+    'Noise',
   ];
 
   String _getFirstName(String? fullName) {
     final trimmedName = fullName?.trim() ?? '';
-    if (trimmedName.isEmpty) {
-      return 'User';
-    }
-
+    if (trimmedName.isEmpty) return 'Resident';
     return trimmedName.split(RegExp(r'\s+')).first;
   }
 
   IconData _getCategoryIcon(String category) {
     switch (category.toLowerCase()) {
-      case 'road':
-        return Icons.add_road_outlined;
+      case 'maintenance':
+        return Icons.handyman_outlined;
       case 'water':
         return Icons.water_drop_outlined;
       case 'electricity':
         return Icons.lightbulb_outline;
       case 'safety':
         return Icons.security;
+      case 'lighting':
+        return Icons.wb_twilight_outlined;
+      case 'parking':
+        return Icons.local_parking_outlined;
+      case 'noise':
+        return Icons.volume_up_outlined;
       default:
         return Icons.help_outline;
     }
@@ -57,7 +66,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       case 'resolved':
         return MyTheme.statusResolved;
       default:
-        return Colors.grey;
+        return MyTheme.mutedText;
     }
   }
 
@@ -86,221 +95,347 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final reportState = ref.watch(reportViewModelProvider);
     final userName = _getFirstName(authState.user?.fullName);
 
-    // Filter recent reports based on selected category chip
     final recentReports = reportState.reports.where((report) {
       if (_selectedCategory == 'All') return true;
       return report.category.toLowerCase() == _selectedCategory.toLowerCase();
     }).toList();
 
+    final pendingCount = reportState.reports
+        .where((r) => r.status.toLowerCase() == 'pending')
+        .length;
+    final resolvedCount = reportState.reports
+        .where((r) => r.status.toLowerCase() == 'resolved')
+        .length;
+
     return Scaffold(
       backgroundColor: MyTheme.darkBackground,
-      appBar: AppBar(
-        title: const Text(
-          'Home',
-          style: TextStyle(
-            fontFamily: 'MontserratBold',
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: MyTheme.darkNavy,
-        elevation: 0,
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white),
-            onPressed: _handleLogout,
-            tooltip: 'Logout',
-          ),
-        ],
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Greeting pill
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Text(
-                  'Hello, $userName 👋',
-                  style: const TextStyle(
-                    fontFamily: 'MontserratBold',
-                    color: MyTheme.darkNavy,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          // Category chips header
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: Text(
-              'Browse by Category',
-              style: TextStyle(
-                fontFamily: 'MontserratBold',
-                color: Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          // Category chips
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: _categories.map((category) {
-                final isSelected = _selectedCategory == category;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: ChoiceChip(
-                    label: Text(
-                      category,
-                      style: TextStyle(
-                        fontFamily: isSelected
-                            ? 'MontserratBold'
-                            : 'MontserratRegular',
-                        color: isSelected
-                            ? Colors.white
-                            : const Color(0xFF6B8FAF),
-                        fontWeight: isSelected
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                      ),
-                    ),
-                    selected: isSelected,
-                    selectedColor: MyTheme.civicBlue,
-                    backgroundColor: MyTheme.darkNavy,
-                    onSelected: (selected) {
-                      if (selected) {
-                        setState(() => _selectedCategory = category);
-                      }
-                    },
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-          const SizedBox(height: 20),
-          // Recent Activity Header
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Recent Reports Feed',
-                  style: TextStyle(
-                    fontFamily: 'MontserratBold',
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    // Navigate to reports tab
-                    ref.read(bottomNavigationProvider.notifier).changeTab(1);
-                  },
-                  child: const Text(
-                    'View All',
-                    style: TextStyle(
-                      fontFamily: 'MontserratBold',
-                      color: MyTheme.civicBlue,
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Feed list
-          Expanded(
-            child: recentReports.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(28),
-                          decoration: BoxDecoration(
-                            color: MyTheme.civicBlue.withValues(alpha: 0.08),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.space_dashboard_outlined,
-                            size: 64,
-                            color: MyTheme.civicBlue,
-                          ),
+      body: SafeArea(
+        child: RefreshIndicator(
+          color: MyTheme.brandBlue,
+          backgroundColor: MyTheme.darkNavy,
+          onRefresh: () =>
+              ref.read(reportViewModelProvider.notifier).loadReports(),
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 16, 16, 0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'CivicConnect',
+                              style: AppTypography.title(MyTheme.textPrimary),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Hello, $userName',
+                              style: AppTypography.bodySm(MyTheme.textSecondary),
+                            ),
+                            const SizedBox(height: 8),
+                            const AmbientLightChip(),
+                          ],
                         ),
-                        const SizedBox(height: 24),
-                        const Text(
-                          'No Activity Yet',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            fontFamily: 'MontserratBold',
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.logout_rounded,
+                          color: MyTheme.textSecondary,
+                        ),
+                        onPressed: _handleLogout,
+                        tooltip: 'Logout',
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: MyTheme.surface,
+                      borderRadius: BorderRadius.circular(MyTheme.radiusLg),
+                      border: Border.all(color: MyTheme.border),
+                      boxShadow: MyTheme.cardShadow,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'YOUR BUILDING',
+                          style: AppTypography.overline(MyTheme.primary),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'See something wrong?',
+                          style: AppTypography.title(MyTheme.textPrimary),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Report maintenance, water, power, safety, parking, or noise issues.',
+                          style: AppTypography.bodySm(MyTheme.textSecondary),
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              ref
+                                  .read(bottomNavigationProvider.notifier)
+                                  .changeTab(2);
+                            },
+                            icon: const Icon(Icons.add_rounded, size: 20),
+                            label: const Text('Report an issue'),
                           ),
                         ),
                         const SizedBox(height: 8),
-                        const Text(
-                          'Your submitted community issues and\nupdates will appear right here.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF6B8FAF),
-                            height: 1.6,
-                            fontFamily: 'MontserratRegular',
+                        SizedBox(
+                          width: double.infinity,
+                          child: TextButton.icon(
+                            onPressed: () {
+                              ref
+                                  .read(bottomNavigationProvider.notifier)
+                                  .changeTab(3);
+                            },
+                            icon: const Icon(Icons.auto_awesome, size: 18),
+                            label: const Text('Ask AI for help'),
                           ),
                         ),
                       ],
                     ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: recentReports.length > 5
-                        ? 5
-                        : recentReports.length, // show max 5 recent reports
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _StatTile(
+                          label: 'Open',
+                          value: '$pendingCount',
+                          color: MyTheme.statusPending,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _StatTile(
+                          label: 'Resolved',
+                          value: '$resolvedCount',
+                          color: MyTheme.statusResolved,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _StatTile(
+                          label: 'Total',
+                          value: '${reportState.reports.length}',
+                          color: MyTheme.brandBlue,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    AppSpacing.lg,
+                    AppSpacing.lg,
+                    AppSpacing.sm,
+                  ),
+                  child: Text(
+                    'Categories',
+                    style: AppTypography.titleSm(MyTheme.textPrimary),
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 42,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    itemCount: _categories.length,
+                    separatorBuilder: (_, _) => const SizedBox(width: 8),
                     itemBuilder: (context, index) {
-                      final report = recentReports[index];
-                      return _ReportFeedCard(
-                        report: report,
-                        icon: _getCategoryIcon(report.category),
-                        statusColor: _getStatusColor(report.status),
-                        statusText: _formatStatusText(report.status),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ReportDetailView(report: report),
-                            ),
-                          );
+                      final category = _categories[index];
+                      final isSelected = _selectedCategory == category;
+                      return ChoiceChip(
+                        label: Text(category),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          if (selected) {
+                            setState(() => _selectedCategory = category);
+                          }
                         },
+                        labelStyle: TextStyle(
+                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                          color: isSelected
+                              ? MyTheme.textOnPrimary
+                              : MyTheme.textSecondary,
+                          fontSize: 13,
+                        ),
+                        selectedColor: MyTheme.primary,
+                        backgroundColor: MyTheme.surface,
+                        side: BorderSide(
+                          color: isSelected
+                              ? MyTheme.primary
+                              : MyTheme.border,
+                        ),
+                        showCheckmark: false,
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
                       );
                     },
                   ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 24, 16, 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Recent reports',
+                          style: AppTypography.titleSm(MyTheme.textPrimary),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          ref
+                              .read(bottomNavigationProvider.notifier)
+                              .changeTab(1);
+                        },
+                        child: Text(
+                          'View all',
+                          style: AppTypography.button(MyTheme.primary).copyWith(
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              if (reportState.isLoading && recentReports.isEmpty)
+                const SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
+                    child: CircularProgressIndicator(color: MyTheme.brandBlue),
+                  ),
+                )
+              else if (recentReports.isEmpty)
+                const SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: _EmptyFeed(),
+                )
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final report = recentReports[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _ReportFeedCard(
+                            report: report,
+                            icon: _getCategoryIcon(report.category),
+                            statusColor: _getStatusColor(report.status),
+                            statusText: _formatStatusText(report.status),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      ReportDetailView(report: report),
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      },
+                      childCount: recentReports.length > 6
+                          ? 6
+                          : recentReports.length,
+                    ),
+                  ),
+                ),
+            ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StatTile extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _StatTile({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: AppSpacing.cardPadding,
+      decoration: AppDecorations.card(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(value, style: AppTypography.title(color)),
+          const SizedBox(height: AppSpacing.xxs),
+          Text(label, style: AppTypography.caption(MyTheme.textSecondary)),
         ],
+      ),
+    );
+  }
+}
+
+class _EmptyFeed extends StatelessWidget {
+  const _EmptyFeed();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.apartment_outlined,
+              size: 56,
+              color: MyTheme.primary,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              'No reports yet',
+              style: AppTypography.title(MyTheme.textPrimary),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Issues reported in your apartment complex will show up here.',
+              textAlign: TextAlign.center,
+              style: AppTypography.body(MyTheme.textSecondary),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -323,96 +458,72 @@ class _ReportFeedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: MyTheme.darkNavy,
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+    return Material(
+      color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
+        borderRadius: BorderRadius.circular(MyTheme.radiusLg),
+        hoverColor: MyTheme.primaryLight.withValues(alpha: 0.35),
+        splashColor: MyTheme.primaryLight.withValues(alpha: 0.5),
+        child: Ink(
+          padding: AppSpacing.cardPadding,
+          decoration: AppDecorations.card(),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(icon, color: MyTheme.civicBlue, size: 24),
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                decoration: AppDecorations.iconWell(),
+                child: Icon(icon, color: MyTheme.primary, size: 22),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          report.category.toUpperCase(),
-                          style: const TextStyle(
-                            fontFamily: 'MontserratBold',
-                            color: MyTheme.civicBlue,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.8,
+                        Expanded(
+                          child: Text(
+                            report.category.toUpperCase(),
+                            style: AppTypography.overline(MyTheme.primary),
                           ),
                         ),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
+                            horizontal: AppSpacing.xs,
+                            vertical: AppSpacing.xxs,
                           ),
-                          decoration: BoxDecoration(
-                            color: statusColor.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
+                          decoration: AppDecorations.statusPill(statusColor),
                           child: Text(
                             statusText.toUpperCase(),
-                            style: TextStyle(
-                              fontFamily: 'MontserratBold',
-                              color: statusColor,
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: AppTypography.overline(statusColor),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppSpacing.xs),
                     Text(
                       report.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontFamily: 'MontserratBold',
-                        fontSize: 15,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: AppTypography.titleSm(MyTheme.textPrimary),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppSpacing.xs),
                     Row(
                       children: [
                         const Icon(
                           Icons.location_on_outlined,
-                          color: Color(0xFF6B8FAF),
-                          size: 12,
+                          color: MyTheme.textSecondary,
+                          size: 14,
                         ),
-                        const SizedBox(width: 2),
+                        const SizedBox(width: AppSpacing.xxs),
                         Expanded(
                           child: Text(
                             report.location,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontFamily: 'MontserratRegular',
-                              color: Color(0xFF6B8FAF),
-                              fontSize: 11,
-                            ),
+                            style: AppTypography.caption(MyTheme.textSecondary),
                           ),
                         ),
                       ],

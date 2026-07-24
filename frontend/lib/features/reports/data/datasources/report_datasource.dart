@@ -5,6 +5,7 @@ abstract class ReportRemoteDatasource {
   Future<List<ReportEntity>> getReports();
   Future<List<ReportEntity>> getMyReports(String userId);
   Future<ReportEntity> submitReport(ReportEntity report, String? imagePath);
+  Future<ReportEntity> updateReportStatus(String reportId, String status);
 }
 
 abstract class ReportLocalDatasource {

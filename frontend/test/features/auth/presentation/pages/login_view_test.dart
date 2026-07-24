@@ -86,7 +86,9 @@ void main() {
     await tester.enterText(find.byType(TextFormField).at(0), 'user@test.com');
     await tester.enterText(find.byType(TextFormField).at(1), 'password123');
     await tester.tap(find.widgetWithText(ElevatedButton, 'Login'));
-    await tester.pumpAndSettle();
+    // Avoid pumpAndSettle — SnackBar / progress animations can run indefinitely.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
 
     verify(mockRepository.login('user@test.com', 'password123')).called(1);
     expect(find.text('Dashboard'), findsOneWidget);
@@ -103,7 +105,8 @@ void main() {
     await tester.enterText(find.byType(TextFormField).at(0), 'user@test.com');
     await tester.enterText(find.byType(TextFormField).at(1), 'password123');
     await tester.tap(find.widgetWithText(ElevatedButton, 'Login'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('Invalid credentials'), findsOneWidget);
     expect(find.byType(SnackBar), findsOneWidget);

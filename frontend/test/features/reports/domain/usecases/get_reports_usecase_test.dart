@@ -16,7 +16,7 @@ void main() {
       reportId: '1',
       title: 'Pothole on Main St',
       description: 'Large pothole near intersection',
-      category: 'Road',
+      category: 'Maintenance',
       status: 'pending',
       location: 'Main St',
       submittedBy: 'user@test.com',

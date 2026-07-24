@@ -73,9 +73,10 @@ class AuthRepositoryImpl implements AuthRepository {
             authId: apiModel.id,
             email: apiModel.email,
             fullName: '${apiModel.firstName} ${apiModel.lastName}'.trim(),
+            username: apiModel.username,
             password:
                 password, // cache password locally for offline login capability
-            role: apiModel.role ?? 'User',
+            role: apiModel.role ?? 'user',
             profilePicture: apiModel.profilePicture,
           );
 

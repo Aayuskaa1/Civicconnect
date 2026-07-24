@@ -1,2 +1,7 @@
+// CocoaPods warning fix:
+// Runner's "Profile" configuration is mapped to :release in Podfile, but CocoaPods still expects
+// the profile xcconfig to be part of the base configuration chain.
+// Include both; keep release last so it wins for Release builds.
+#include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"
 #include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"
 #include "Generated.xcconfig"
