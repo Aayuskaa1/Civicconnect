@@ -19,6 +19,7 @@ class SensorState {
     this.ambientThemeMode,
     this.pendingSuggestion,
     this.lastEventMessage,
+    this.eventId = 0,
     this.lightAvailable = true,
     this.motionAvailable = true,
   });
@@ -30,6 +31,9 @@ class SensorState {
   final String? ambientThemeMode;
   final ReportSuggestion? pendingSuggestion;
   final String? lastEventMessage;
+
+  /// Increments whenever a new sensor action should be handled.
+  final int eventId;
   final bool lightAvailable;
   final bool motionAvailable;
 
@@ -42,6 +46,7 @@ class SensorState {
     bool clearSuggestion = false,
     String? lastEventMessage,
     bool clearEventMessage = false,
+    int? eventId,
     bool? lightAvailable,
     bool? motionAvailable,
   }) {
@@ -57,6 +62,7 @@ class SensorState {
       lastEventMessage: clearEventMessage
           ? null
           : (lastEventMessage ?? this.lastEventMessage),
+      eventId: eventId ?? this.eventId,
       lightAvailable: lightAvailable ?? this.lightAvailable,
       motionAvailable: motionAvailable ?? this.motionAvailable,
     );

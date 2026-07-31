@@ -8,7 +8,6 @@ import 'package:civic_connect/features/reports/domain/entities/report_entity.dar
 import 'package:civic_connect/features/reports/presentation/pages/report_detail_view.dart';
 import 'package:civic_connect/features/reports/presentation/view_model/report_view_model.dart';
 import 'package:civic_connect/features/dashboard/presentation/view_models/bottom_navigation_viewmodel.dart';
-import 'package:civic_connect/features/sensors/presentation/widgets/sensor_host.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -136,8 +135,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               'Hello, $userName',
                               style: AppTypography.bodySm(MyTheme.textSecondary),
                             ),
-                            const SizedBox(height: 8),
-                            const AmbientLightChip(),
                           ],
                         ),
                       ),

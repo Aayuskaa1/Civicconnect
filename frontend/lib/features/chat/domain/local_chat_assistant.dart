@@ -251,7 +251,7 @@ class LocalChatAssistant {
         'the app can suggest a Lighting / Safety report and may switch to a darker UI.\n'
         '2. Accelerometer — shake the phone to open Report an issue quickly. '
         'A hard bump can also suggest a Safety report.\n\n'
-        'These run while you are on the dashboard.',
+        'These run while you are in the app. Open Profile → Sensor Dashboard → Light Sensor for live lux.',
       );
     }
 

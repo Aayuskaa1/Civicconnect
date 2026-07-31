@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:civic_connect/app/theme/my_theme.dart';
 import 'package:civic_connect/app/theme/app_typography.dart';
 import 'package:civic_connect/app/theme/app_spacing.dart';
+import 'package:civic_connect/core/api/api_endpoints.dart';
 import 'package:civic_connect/features/auth/presentation/view_model/auth_view_model.dart';
 import 'package:civic_connect/features/reports/domain/entities/report_entity.dart';
 import 'package:civic_connect/features/reports/presentation/view_model/report_view_model.dart';
@@ -84,7 +85,8 @@ class _ReportDetailViewState extends ConsumerState<ReportDetailView> {
     final statusText = _formatStatusText(_report.status);
 
     Widget buildImageWidget() {
-      if (_report.imageUrl == null || _report.imageUrl!.isEmpty) {
+      final imageUrl = ApiEndpoints.resolveMediaUrl(_report.imageUrl);
+      if (imageUrl == null || imageUrl.isEmpty) {
         return Container(
           height: 220,
           color: MyTheme.surfaceElevated,
@@ -108,9 +110,9 @@ class _ReportDetailViewState extends ConsumerState<ReportDetailView> {
         );
       }
 
-      final isFile = !_report.imageUrl!.startsWith('http');
+      final isFile = !imageUrl.startsWith('http');
       if (isFile) {
-        final file = File(_report.imageUrl!);
+        final file = File(imageUrl);
         if (file.existsSync()) {
           return Image.file(
             file,
@@ -122,7 +124,7 @@ class _ReportDetailViewState extends ConsumerState<ReportDetailView> {
       }
 
       return Image.network(
-        _report.imageUrl!,
+        imageUrl,
         height: 220,
         width: double.infinity,
         fit: BoxFit.cover,

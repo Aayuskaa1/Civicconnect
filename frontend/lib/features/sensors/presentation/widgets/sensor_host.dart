@@ -92,10 +92,8 @@ class _SensorHostState extends ConsumerState<SensorHost> {
     ref.listen<SensorState>(sensorControllerProvider, (previous, next) {
       final suggestion = next.pendingSuggestion;
       if (suggestion == null) return;
-      if (previous?.pendingSuggestion?.source == suggestion.source &&
-          previous?.pendingSuggestion?.title == suggestion.title) {
-        return;
-      }
+      // Fire on every new sensor event (simulator buttons can repeat).
+      if (previous?.eventId == next.eventId) return;
       _handleSuggestion(suggestion);
     });
 
@@ -103,73 +101,18 @@ class _SensorHostState extends ConsumerState<SensorHost> {
   }
 }
 
-/// Compact lux status chip for Home — tap to open Sensor check sheet.
-class AmbientLightChip extends ConsumerWidget {
-  const AmbientLightChip({super.key});
-
-  void _openCheckSheet(BuildContext context, WidgetRef ref) {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: MyTheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(MyTheme.radiusLg),
-        ),
+/// Opens the sensor demo / status sheet (Profile → Sensors & gestures).
+void showSensorCheckSheet(BuildContext context) {
+  showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: MyTheme.surface,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(MyTheme.radiusLg),
       ),
-      builder: (context) => const _SensorCheckSheet(),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final sensor = ref.watch(sensorControllerProvider);
-    final hasLux = sensor.lux != null;
-    final isDark = sensor.isDarkArea;
-    final label = hasLux
-        ? (isDark
-            ? 'Low light · ${sensor.lux!.toStringAsFixed(0)} lux'
-            : 'Ambient · ${sensor.lux!.toStringAsFixed(0)} lux')
-        : 'Sensors · tap to check';
-
-    return InkWell(
-      onTap: () => _openCheckSheet(context, ref),
-      borderRadius: BorderRadius.circular(999),
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
-        ),
-        decoration: BoxDecoration(
-          color: isDark
-              ? MyTheme.statusPending.withValues(alpha: 0.12)
-              : MyTheme.primaryLight,
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(
-            color: isDark ? MyTheme.statusPending : MyTheme.border,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isDark
-                  ? Icons.wb_twilight_outlined
-                  : Icons.sensors_outlined,
-              size: 16,
-              color: isDark ? MyTheme.statusPending : MyTheme.primary,
-            ),
-            const SizedBox(width: AppSpacing.xs),
-            Text(
-              label,
-              style: AppTypography.caption(
-                isDark ? MyTheme.statusPending : MyTheme.primary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+    ),
+    builder: (context) => const _SensorCheckSheet(),
+  );
 }
 
 class _SensorCheckSheet extends ConsumerWidget {
@@ -181,7 +124,7 @@ class _SensorCheckSheet extends ConsumerWidget {
     final controller = ref.read(sensorControllerProvider.notifier);
 
     return SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.lg,
           AppSpacing.md,
@@ -189,7 +132,6 @@ class _SensorCheckSheet extends ConsumerWidget {
           AppSpacing.lg,
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Center(
@@ -233,7 +175,7 @@ class _SensorCheckSheet extends ConsumerWidget {
             ElevatedButton.icon(
               onPressed: () {
                 Navigator.pop(context);
-                controller.simulateLowLight();
+                Future.microtask(controller.simulateLowLight);
               },
               icon: const Icon(Icons.wb_twilight_outlined, size: 18),
               label: const Text('Test low light'),
@@ -242,7 +184,7 @@ class _SensorCheckSheet extends ConsumerWidget {
             OutlinedButton.icon(
               onPressed: () {
                 Navigator.pop(context);
-                controller.simulateShake();
+                Future.microtask(controller.simulateShake);
               },
               icon: const Icon(Icons.vibration, size: 18),
               label: const Text('Test shake → Report'),
@@ -251,7 +193,7 @@ class _SensorCheckSheet extends ConsumerWidget {
             OutlinedButton.icon(
               onPressed: () {
                 Navigator.pop(context);
-                controller.simulateBump();
+                Future.microtask(controller.simulateBump);
               },
               icon: const Icon(Icons.warning_amber_outlined, size: 18),
               label: const Text('Test hard bump'),

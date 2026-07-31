@@ -6,14 +6,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const multer_1 = __importDefault(require("multer"));
 const path_1 = __importDefault(require("path"));
-const fs_1 = __importDefault(require("fs"));
 const user_controller_1 = require("../controllers/user.controller");
 const auth_middleware_1 = require("../middlewares/auth.middleware");
-const uploadsDir = path_1.default.resolve(process.cwd(), 'uploads');
-fs_1.default.mkdirSync(uploadsDir, { recursive: true });
+const uploads_config_1 = require("../configs/uploads.config");
 const storage = multer_1.default.diskStorage({
     destination: (_req, _file, cb) => {
-        cb(null, uploadsDir);
+        cb(null, uploads_config_1.uploadsPath);
     },
     filename: (_req, file, cb) => {
         const ext = path_1.default.extname(file.originalname || '');

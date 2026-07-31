@@ -1,9 +1,3 @@
-import 'package:civic_connect/features/auth/domain/repositories/auth_repository.dart';
-import 'package:civic_connect/features/reports/domain/repositories/report_repository.dart';
-import 'package:mockito/annotations.dart';
-
-@GenerateMocks([
-  AuthRepository,
-  ReportRepository,
-])
+// Mockito codegen helper kept for reference only.
+// CivicConnect tests use mocktail — see test/helpers/mocktail_mocks.dart
 void main() {}

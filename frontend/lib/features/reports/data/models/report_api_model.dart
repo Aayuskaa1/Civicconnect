@@ -1,3 +1,4 @@
+import 'package:civic_connect/core/api/api_endpoints.dart';
 import 'package:civic_connect/features/reports/domain/entities/report_entity.dart';
 
 class ReportApiModel {
@@ -30,7 +31,7 @@ class ReportApiModel {
       description: (json['description'] ?? '') as String,
       category: (json['category'] ?? 'Other') as String,
       status: (json['status'] ?? 'pending') as String,
-      imageUrl: json['imageUrl'] as String?,
+      imageUrl: ApiEndpoints.resolveMediaUrl(json['imageUrl'] as String?),
       location: (json['location'] ?? '') as String,
       submittedBy: (json['submittedBy'] ?? '') as String,
       createdAt: json['createdAt'] == null

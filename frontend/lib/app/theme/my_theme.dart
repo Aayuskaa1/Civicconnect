@@ -172,6 +172,7 @@ class MyTheme {
         fillColor: isDark ? elevated : lightBg,
         hintStyle: AppTypography.body(muted),
         labelStyle: AppTypography.body(muted),
+        floatingLabelStyle: AppTypography.caption(primary),
         contentPadding: const EdgeInsets.symmetric(
           vertical: 18,
           horizontal: 16,

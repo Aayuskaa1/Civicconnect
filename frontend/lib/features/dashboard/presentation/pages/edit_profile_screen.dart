@@ -7,6 +7,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:civic_connect/app/theme/my_theme.dart';
 import 'package:civic_connect/app/theme/app_typography.dart';
 import 'package:civic_connect/app/theme/app_spacing.dart';
+import 'package:civic_connect/core/api/api_endpoints.dart';
 import 'package:civic_connect/core/utils/snackbar_utils.dart';
 import 'package:civic_connect/features/auth/presentation/state/auth_state.dart';
 import 'package:civic_connect/features/auth/presentation/view_model/auth_view_model.dart';
@@ -214,7 +215,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authViewModelProvider);
     final user = authState.user;
-    final currentPhoto = _selectedImagePath ?? user?.profilePicture;
+    final currentPhoto =
+        _selectedImagePath ?? ApiEndpoints.resolveMediaUrl(user?.profilePicture);
     final isLoading = authState.status == AuthStatus.loading;
 
     Widget avatar = const CircleAvatar(
@@ -228,6 +230,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         avatar = CircleAvatar(
           radius: 52,
           backgroundImage: NetworkImage(currentPhoto),
+          onBackgroundImageError: (_, _) {},
         );
       } else {
         final file = File(currentPhoto);

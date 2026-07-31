@@ -1,3 +1,4 @@
+import 'package:civic_connect/core/api/api_endpoints.dart';
 import 'package:civic_connect/features/auth/domain/entities/auth_entity.dart';
 
 class AuthApiModel {
@@ -26,7 +27,9 @@ class AuthApiModel {
       firstName: json['firstName'] as String? ?? '',
       lastName: json['lastName'] as String? ?? '',
       role: json['role'] as String?,
-      profilePicture: json['profilePicture'] as String?,
+      profilePicture: ApiEndpoints.resolveMediaUrl(
+        json['profilePicture'] as String?,
+      ),
       username: json['username'] as String?,
     );
   }

@@ -4,11 +4,13 @@ import 'dart:io';
 import 'package:civic_connect/app/theme/my_theme.dart';
 import 'package:civic_connect/app/theme/app_typography.dart';
 import 'package:civic_connect/app/theme/app_spacing.dart';
+import 'package:civic_connect/core/api/api_endpoints.dart';
 import 'package:civic_connect/features/auth/presentation/view_model/auth_view_model.dart';
 import 'package:civic_connect/features/dashboard/presentation/pages/edit_profile_screen.dart';
 import 'package:civic_connect/features/reports/domain/entities/report_entity.dart';
 import 'package:civic_connect/features/reports/presentation/pages/report_detail_view.dart';
 import 'package:civic_connect/features/reports/presentation/view_model/report_view_model.dart';
+import 'package:civic_connect/features/sensors/presentation/pages/sensor_dashboard_screen.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -60,15 +62,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Widget _buildAvatar(String? profilePicture) {
-    if (profilePicture != null && profilePicture.isNotEmpty) {
-      final isNetwork = profilePicture.startsWith('http');
+    final resolved = ApiEndpoints.resolveMediaUrl(profilePicture);
+    if (resolved != null && resolved.isNotEmpty) {
+      final isNetwork = resolved.startsWith('http');
       if (isNetwork) {
         return CircleAvatar(
           radius: 48,
-          backgroundImage: NetworkImage(profilePicture),
+          backgroundImage: NetworkImage(resolved),
+          onBackgroundImageError: (_, _) {},
         );
       }
-      final file = File(profilePicture);
+      final file = File(resolved);
       if (file.existsSync()) {
         return CircleAvatar(
           radius: 48,
@@ -216,6 +220,31 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ),
                   ),
                 ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            ListTile(
+              onTap: () =>
+                  Navigator.pushNamed(context, SensorDashboardScreen.routeName),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(MyTheme.radiusMd),
+              ),
+              tileColor: MyTheme.primaryLight.withValues(alpha: 0.45),
+              leading: const Icon(
+                Icons.sensors_outlined,
+                color: MyTheme.primary,
+              ),
+              title: Text(
+                'Sensor Dashboard',
+                style: AppTypography.titleSm(MyTheme.textPrimary),
+              ),
+              subtitle: Text(
+                'Adaptive brightness · shake · bump',
+                style: AppTypography.caption(MyTheme.textSecondary),
+              ),
+              trailing: const Icon(
+                Icons.chevron_right_rounded,
+                color: MyTheme.primary,
               ),
             ),
             const SizedBox(height: AppSpacing.md),

@@ -1,10 +1,10 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:math' as math;
 
-import 'package:ambient_light/ambient_light.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:light_sensor/light_sensor.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import 'package:civic_connect/features/sensors/presentation/state/sensor_state.dart';
 
@@ -15,20 +15,23 @@ final sensorControllerProvider =
   return controller;
 });
 
-/// Keeps only Light + Accelerometer sensors for CivicConnect.
+/// Light (Android lux / sim demos) + Accelerometer for CivicConnect.
+///
+/// Adaptive Brightness on iOS is handled separately by
+/// [AdaptiveBrightnessController] via system brightness — iOS has no lux API.
 class SensorController extends StateNotifier<SensorState> {
   SensorController() : super(const SensorState());
 
+  int _nextEventId() => state.eventId + 1;
+
   static const double lowLuxThreshold = 25;
-  static const double brightLuxThreshold = 80;
   static const double shakeMagnitude = 14;
   static const double bumpMagnitude = 28;
   static const Duration suggestionCooldown = Duration(minutes: 3);
   static const Duration shakeCooldown = Duration(seconds: 2);
   static const Duration bumpCooldown = Duration(seconds: 8);
 
-  AmbientLight? _ambientLight;
-  StreamSubscription<double>? _lightSub;
+  StreamSubscription<int>? _lightSub;
   StreamSubscription<UserAccelerometerEvent>? _accelSub;
 
   DateTime? _lastLowLightPrompt;
@@ -52,13 +55,22 @@ class SensorController extends StateNotifier<SensorState> {
     }
 
     try {
-      _ambientLight = AmbientLight(frontCamera: Platform.isIOS);
-      _lightSub = _ambientLight!.ambientLightStream.listen(
-        _onLux,
+      final hasSensor = await LightSensor.hasSensor();
+      if (!hasSensor) {
+        state = state.copyWith(lightAvailable: false);
+        return;
+      }
+
+      _lightSub = LightSensor.luxStream().listen(
+        (lux) => _onLux(lux.toDouble()),
         onError: (_) {
           state = state.copyWith(lightAvailable: false);
         },
+        cancelOnError: true,
       );
+      state = state.copyWith(lightAvailable: true);
+    } on MissingPluginException {
+      state = state.copyWith(lightAvailable: false);
     } catch (_) {
       state = state.copyWith(lightAvailable: false);
     }
@@ -86,14 +98,7 @@ class SensorController extends StateNotifier<SensorState> {
 
   void _onLux(double lux) {
     final isDark = lux < lowLuxThreshold;
-    String? themeMode = state.ambientThemeMode;
-
-    // Optional ambient theme: dark in dim spaces, light when bright again.
-    if (lux < lowLuxThreshold) {
-      themeMode = 'dark';
-    } else if (lux > brightLuxThreshold) {
-      themeMode = 'light';
-    }
+    final themeMode = isDark ? 'dark' : 'light';
 
     state = state.copyWith(
       lux: lux,
@@ -124,6 +129,7 @@ class SensorController extends StateNotifier<SensorState> {
       ),
       lastEventMessage:
           'Low light detected (${lux.toStringAsFixed(0)} lux). Consider a Safety / Lighting report.',
+      eventId: _nextEventId(),
     );
   }
 
@@ -133,7 +139,6 @@ class SensorController extends StateNotifier<SensorState> {
     );
     final now = DateTime.now();
 
-    // Hard bump / jolt → optional safety suggestion
     if (magnitude >= bumpMagnitude) {
       if (_lastBumpAt == null ||
           now.difference(_lastBumpAt!) >= bumpCooldown) {
@@ -151,13 +156,13 @@ class SensorController extends StateNotifier<SensorState> {
             ),
             lastEventMessage:
                 'Hard bump detected. You can report a safety concern.',
+            eventId: _nextEventId(),
           );
         }
       }
       return;
     }
 
-    // Shake-to-report (quick action)
     if (magnitude < shakeMagnitude) return;
 
     _shakeWindowStart ??= now;
@@ -185,6 +190,7 @@ class SensorController extends StateNotifier<SensorState> {
         source: 'shake',
       ),
       lastEventMessage: 'Shake detected — opening Report an issue.',
+      eventId: _nextEventId(),
     );
   }
 
@@ -196,16 +202,17 @@ class SensorController extends StateNotifier<SensorState> {
     state = state.copyWith(clearEventMessage: true);
   }
 
-  /// Simulator / viva helper: fake a very dark reading.
   void simulateLowLight({double lux = 8}) {
     _lastLowLightPrompt = null;
     state = state.copyWith(clearSuggestion: true);
     _onLux(lux);
   }
 
-  /// Simulator / viva helper: open Report via shake flow.
   void simulateShake() {
     _lastShakeAt = null;
+    _shakeHits = 0;
+    _shakeWindowStart = null;
+    state = state.copyWith(clearSuggestion: true, clearEventMessage: true);
     state = state.copyWith(
       pendingSuggestion: const ReportSuggestion(
         category: 'Other',
@@ -214,12 +221,13 @@ class SensorController extends StateNotifier<SensorState> {
         source: 'shake',
       ),
       lastEventMessage: 'Shake detected — opening Report an issue.',
+      eventId: _nextEventId(),
     );
   }
 
-  /// Simulator / viva helper: hard bump safety prompt.
   void simulateBump() {
     _lastBumpAt = null;
+    state = state.copyWith(clearSuggestion: true, clearEventMessage: true);
     state = state.copyWith(
       pendingSuggestion: const ReportSuggestion(
         category: 'Safety',
@@ -231,6 +239,7 @@ class SensorController extends StateNotifier<SensorState> {
         source: 'bump',
       ),
       lastEventMessage: 'Hard bump detected. You can report a safety concern.',
+      eventId: _nextEventId(),
     );
   }
 

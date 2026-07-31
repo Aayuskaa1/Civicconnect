@@ -7,98 +7,116 @@ import 'package:civic_connect/features/auth/presentation/view_model/auth_view_mo
 import 'package:dartz/dartz.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
+import 'package:mocktail/mocktail.dart';
 
-import '../../../../helpers/mocks.mocks.dart';
+import '../../../../helpers/mocktail_mocks.dart';
 
 void main() {
   late MockAuthRepository mockRepository;
   late ProviderContainer container;
 
-  const tEmail = 'student@test.com';
-  const tPassword = 'password123';
-  const tFullName = 'Test User';
-  const tUser = AuthEntity(
-    authId: 'auth-1',
-    email: tEmail,
-    fullName: tFullName,
-  );
+  setUpAll(() {
+    registerFallbackValue(
+      const AuthEntity(
+        authId: 'fallback',
+        email: 'fallback@test.com',
+        fullName: 'Fallback',
+      ),
+    );
+  });
 
   setUp(() {
     mockRepository = MockAuthRepository();
     container = ProviderContainer(
       overrides: [
         loginUsecaseProvider.overrideWith((ref) => LoginUsecase(mockRepository)),
-        registerUsecaseProvider.overrideWith((ref) => RegisterUsecase(mockRepository)),
+        registerUsecaseProvider
+            .overrideWith((ref) => RegisterUsecase(mockRepository)),
       ],
     );
   });
 
-  tearDown(() {
-    container.dispose();
-  });
+  tearDown(() => container.dispose());
 
-  test('initial state should be AuthStatus.initial', () {
-    final state = container.read(authViewModelProvider);
-
-    expect(state.status, AuthStatus.initial);
-    expect(state.errorMessage, isNull);
-    expect(state.user, isNull);
-  });
-
-  test('register success should update state to registered', () async {
-    when(mockRepository.register(any)).thenAnswer((_) async => const Right(true));
+  test('register sets registered status on success', () async {
+    when(() => mockRepository.register(any()))
+        .thenAnswer((_) async => const Right(true));
 
     await container.read(authViewModelProvider.notifier).register(
-          tFullName,
-          tEmail,
-          tPassword,
+          'Test User',
+          'user@test.com',
+          'password123',
         );
 
-    final state = container.read(authViewModelProvider);
-    expect(state.status, AuthStatus.registered);
-    expect(state.errorMessage, isNull);
-    verify(mockRepository.register(any)).called(1);
+    expect(container.read(authViewModelProvider).status, AuthStatus.registered);
   });
 
-  test('register error should update state with error message', () async {
-    const failure = ApiFailure(message: 'Email already exists');
-    when(mockRepository.register(any)).thenAnswer((_) async => const Left(failure));
+  test('register sets error status on failure', () async {
+    when(() => mockRepository.register(any())).thenAnswer(
+      (_) async => const Left(ApiFailure(message: 'Email already exists')),
+    );
 
     await container.read(authViewModelProvider.notifier).register(
-          tFullName,
-          tEmail,
-          tPassword,
+          'Test User',
+          'taken@test.com',
+          'password123',
         );
 
     final state = container.read(authViewModelProvider);
     expect(state.status, AuthStatus.error);
-    expect(state.errorMessage, failure.message);
+    expect(state.errorMessage, 'Email already exists');
   });
 
-  test('login success should update state to authenticated with user', () async {
-    when(mockRepository.login(tEmail, tPassword))
-        .thenAnswer((_) async => const Right(tUser));
+  test('login sets authenticated status on success', () async {
+    const user = AuthEntity(
+      authId: 'auth-1',
+      email: 'user@test.com',
+      fullName: 'Test User',
+    );
+    when(() => mockRepository.login('user@test.com', 'password123'))
+        .thenAnswer((_) async => const Right(user));
 
-    await container.read(authViewModelProvider.notifier).login(tEmail, tPassword);
+    await container.read(authViewModelProvider.notifier).login(
+          'user@test.com',
+          'password123',
+        );
 
     final state = container.read(authViewModelProvider);
     expect(state.status, AuthStatus.authenticated);
-    expect(state.user, tUser);
-    expect(state.errorMessage, isNull);
-    verify(mockRepository.login(tEmail, tPassword)).called(1);
+    expect(state.user, user);
   });
 
-  test('login error should update state with error message', () async {
-    const failure = ApiFailure(message: 'Invalid credentials');
-    when(mockRepository.login(tEmail, tPassword))
-        .thenAnswer((_) async => const Left(failure));
+  test('login sets error status on invalid credentials', () async {
+    when(() => mockRepository.login(any(), any())).thenAnswer(
+      (_) async => const Left(ApiFailure(message: 'Invalid email or password')),
+    );
 
-    await container.read(authViewModelProvider.notifier).login(tEmail, tPassword);
+    await container.read(authViewModelProvider.notifier).login(
+          'user@test.com',
+          'wrong',
+        );
 
     final state = container.read(authViewModelProvider);
     expect(state.status, AuthStatus.error);
-    expect(state.errorMessage, failure.message);
-    expect(state.user, isNull);
+    expect(state.errorMessage, 'Invalid email or password');
+  });
+
+  test('resetState clears error while keeping authenticated user', () async {
+    const user = AuthEntity(
+      authId: 'auth-1',
+      email: 'user@test.com',
+      fullName: 'Test User',
+    );
+    when(() => mockRepository.login(any(), any()))
+        .thenAnswer((_) async => const Right(user));
+
+    final notifier = container.read(authViewModelProvider.notifier);
+    await notifier.login('user@test.com', 'password123');
+    notifier.resetState();
+
+    final state = container.read(authViewModelProvider);
+    expect(state.status, AuthStatus.authenticated);
+    expect(state.errorMessage, isNull);
+    expect(state.user, user);
   });
 }

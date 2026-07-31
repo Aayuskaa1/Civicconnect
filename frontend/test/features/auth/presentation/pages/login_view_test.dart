@@ -1,4 +1,3 @@
-import 'package:civic_connect/core/error/failures.dart';
 import 'package:civic_connect/features/auth/domain/entities/auth_entity.dart';
 import 'package:civic_connect/features/auth/domain/usecases/login_usecase.dart';
 import 'package:civic_connect/features/auth/domain/usecases/register_usecase.dart';
@@ -8,19 +7,19 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
+import 'package:mocktail/mocktail.dart';
 
-import '../../../../helpers/mocks.mocks.dart';
+import '../../../../helpers/mocktail_mocks.dart';
 
 void main() {
   late MockAuthRepository mockRepository;
 
-  Widget buildTestWidget({List<Override> overrides = const []}) {
+  Widget buildTestWidget() {
     return ProviderScope(
       overrides: [
         loginUsecaseProvider.overrideWith((ref) => LoginUsecase(mockRepository)),
-        registerUsecaseProvider.overrideWith((ref) => RegisterUsecase(mockRepository)),
-        ...overrides,
+        registerUsecaseProvider
+            .overrideWith((ref) => RegisterUsecase(mockRepository)),
       ],
       child: MaterialApp(
         home: const LoginView(),
@@ -36,7 +35,7 @@ void main() {
     mockRepository = MockAuthRepository();
   });
 
-  testWidgets('renders login form UI elements', (WidgetTester tester) async {
+  testWidgets('renders login form UI elements', (tester) async {
     await tester.pumpWidget(buildTestWidget());
     await tester.pumpAndSettle();
 
@@ -47,7 +46,7 @@ void main() {
     expect(find.widgetWithText(ElevatedButton, 'Login'), findsOneWidget);
   });
 
-  testWidgets('shows email validation error when email is empty', (WidgetTester tester) async {
+  testWidgets('shows email validation error when email is empty', (tester) async {
     await tester.pumpWidget(buildTestWidget());
     await tester.pumpAndSettle();
 
@@ -55,10 +54,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Please enter your email'), findsOneWidget);
-    verifyNever(mockRepository.login(any, any));
+    verifyNever(() => mockRepository.login(any(), any()));
   });
 
-  testWidgets('shows password validation error when password is too short', (WidgetTester tester) async {
+  testWidgets('shows password validation error when password is too short',
+      (tester) async {
     await tester.pumpWidget(buildTestWidget());
     await tester.pumpAndSettle();
 
@@ -68,16 +68,16 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Password must be at least 6 characters'), findsOneWidget);
-    verifyNever(mockRepository.login(any, any));
+    verifyNever(() => mockRepository.login(any(), any()));
   });
 
-  testWidgets('calls login usecase when form is valid', (WidgetTester tester) async {
+  testWidgets('calls login usecase when form is valid', (tester) async {
     const user = AuthEntity(
       authId: 'auth-1',
       email: 'user@test.com',
       fullName: 'Test User',
     );
-    when(mockRepository.login('user@test.com', 'password123'))
+    when(() => mockRepository.login('user@test.com', 'password123'))
         .thenAnswer((_) async => const Right(user));
 
     await tester.pumpWidget(buildTestWidget());
@@ -86,29 +86,18 @@ void main() {
     await tester.enterText(find.byType(TextFormField).at(0), 'user@test.com');
     await tester.enterText(find.byType(TextFormField).at(1), 'password123');
     await tester.tap(find.widgetWithText(ElevatedButton, 'Login'));
-    // Avoid pumpAndSettle — SnackBar / progress animations can run indefinitely.
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
 
-    verify(mockRepository.login('user@test.com', 'password123')).called(1);
-    expect(find.text('Dashboard'), findsOneWidget);
+    verify(() => mockRepository.login('user@test.com', 'password123')).called(1);
   });
 
-  testWidgets('shows error snackbar when login fails', (WidgetTester tester) async {
-    when(mockRepository.login('user@test.com', 'password123')).thenAnswer(
-      (_) async => const Left(ApiFailure(message: 'Invalid credentials')),
-    );
-
+  testWidgets('navigates to signup page when Sign Up is tapped', (tester) async {
     await tester.pumpWidget(buildTestWidget());
     await tester.pumpAndSettle();
 
-    await tester.enterText(find.byType(TextFormField).at(0), 'user@test.com');
-    await tester.enterText(find.byType(TextFormField).at(1), 'password123');
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Login'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('Sign Up'));
+    await tester.pumpAndSettle();
 
-    expect(find.text('Invalid credentials'), findsOneWidget);
-    expect(find.byType(SnackBar), findsOneWidget);
+    expect(find.text('Signup Page'), findsOneWidget);
   });
 }

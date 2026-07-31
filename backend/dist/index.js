@@ -8,7 +8,7 @@ dotenv_1.default.config();
 console.log('[boot] env loaded, importing app...');
 const app_1 = __importDefault(require("./src/app"));
 const db_config_1 = require("./src/configs/db.config");
-const PORT = Number(process.env.PORT) || 3000;
+const PORT = Number(process.env.PORT) || 3001;
 const startServer = async () => {
     try {
         console.log('[boot] connecting to MongoDB...');

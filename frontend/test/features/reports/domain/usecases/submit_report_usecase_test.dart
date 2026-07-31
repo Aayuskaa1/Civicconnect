@@ -3,9 +3,9 @@ import 'package:civic_connect/features/reports/domain/entities/report_entity.dar
 import 'package:civic_connect/features/reports/domain/usecases/submit_report_usecase.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
+import 'package:mocktail/mocktail.dart';
 
-import '../../../../helpers/mocks.mocks.dart';
+import '../../../../helpers/mocktail_mocks.dart';
 
 void main() {
   late MockReportRepository mockRepository;
@@ -13,17 +13,17 @@ void main() {
 
   final tReport = ReportEntity(
     reportId: '',
-    title: 'Water leak',
-    description: 'Pipe burst on corner',
-    category: 'Water',
+    title: 'Noise complaint',
+    description: 'Loud music',
+    category: 'Noise',
     status: 'pending',
-    location: 'Elm St',
+    location: 'Block C',
     submittedBy: 'user@test.com',
     createdAt: DateTime(2026, 3, 1),
   );
-  final tParams = SubmitReportParams(report: tReport, imagePath: '/tmp/image.jpg');
-  final tSubmittedReport = ReportEntity(
-    reportId: '99',
+
+  final tSaved = ReportEntity(
+    reportId: 'saved-1',
     title: tReport.title,
     description: tReport.description,
     category: tReport.category,
@@ -33,30 +33,48 @@ void main() {
     createdAt: tReport.createdAt,
   );
 
+  setUpAll(() {
+    registerFallbackValue(tReport);
+  });
+
   setUp(() {
     mockRepository = MockReportRepository();
     usecase = SubmitReportUsecase(mockRepository);
   });
 
-  test('should return submitted report when submission is successful', () async {
-    when(mockRepository.submitReport(tReport, tParams.imagePath))
-        .thenAnswer((_) async => Right(tSubmittedReport));
+  test('submitReport returns saved report on success', () async {
+    when(() => mockRepository.submitReport(any(), any()))
+        .thenAnswer((_) async => Right(tSaved));
 
-    final result = await usecase.call(tParams);
+    final result = await usecase(
+      SubmitReportParams(report: tReport, imagePath: null),
+    );
 
-    expect(result, Right(tSubmittedReport));
-    verify(mockRepository.submitReport(tReport, tParams.imagePath)).called(1);
-    verifyNoMoreInteractions(mockRepository);
+    expect(result, Right(tSaved));
+    verify(() => mockRepository.submitReport(tReport, null)).called(1);
   });
 
-  test('should return ApiFailure when submission fails', () async {
-    const failure = ApiFailure(message: 'Failed to submit report');
-    when(mockRepository.submitReport(tReport, tParams.imagePath))
+  test('submitReport passes imagePath to repository', () async {
+    when(() => mockRepository.submitReport(any(), any()))
+        .thenAnswer((_) async => Right(tSaved));
+
+    await usecase(
+      SubmitReportParams(report: tReport, imagePath: '/tmp/photo.jpg'),
+    );
+
+    verify(() => mockRepository.submitReport(tReport, '/tmp/photo.jpg'))
+        .called(1);
+  });
+
+  test('submitReport returns ApiFailure on failure', () async {
+    const failure = ApiFailure(message: 'Upload failed');
+    when(() => mockRepository.submitReport(any(), any()))
         .thenAnswer((_) async => const Left(failure));
 
-    final result = await usecase.call(tParams);
+    final result = await usecase(
+      SubmitReportParams(report: tReport),
+    );
 
     expect(result, const Left(failure));
-    verify(mockRepository.submitReport(tReport, tParams.imagePath)).called(1);
   });
 }

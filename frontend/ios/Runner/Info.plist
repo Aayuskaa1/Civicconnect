@@ -32,6 +32,10 @@
 	<string>Allow CivicConnect to use motion sensors for shake-to-report and safety bump detection.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Allow CivicConnect to connect to your local development server.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_http._tcp</string>
+	</array>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Allow CivicConnect to choose photos for issue reports and profile updates.</string>
 	<key>NSAppTransportSecurity</key>

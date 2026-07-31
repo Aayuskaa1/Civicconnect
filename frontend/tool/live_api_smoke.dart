@@ -5,7 +5,7 @@ import 'package:dio/dio.dart';
 Future<void> main() async {
   final dio = Dio(
     BaseOptions(
-      baseUrl: 'http://127.0.0.1:3000/api/v1/',
+      baseUrl: 'http://127.0.0.1:3001/api/v1/',
       connectTimeout: const Duration(seconds: 8),
       receiveTimeout: const Duration(seconds: 12),
       headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},

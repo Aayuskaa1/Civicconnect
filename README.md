@@ -39,7 +39,7 @@ npm install
 npm run dev
 ```
 
-API base: `http://127.0.0.1:3000/api/v1/`
+API base: `http://127.0.0.1:3001/api/v1/`
 
 ### Shared API endpoints (mobile + web)
 

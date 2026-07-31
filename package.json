@@ -6,7 +6,7 @@
     "dev": "npm run dev:backend",
     "dev:backend": "cd backend && npm run dev",
     "dev:ios-simulator": "cd frontend && bash scripts/setup_ios_build_dir.sh && flutter run --dart-define=USE_LAN=false",
-    "dev:ios-device": "cd frontend && bash scripts/setup_ios_build_dir.sh && flutter run --dart-define=USE_LAN=true --dart-define=LAN_HOST=${LAN_HOST:-192.168.1.70}",
+    "dev:ios-device": "cd frontend && bash scripts/setup_ios_build_dir.sh && flutter run --dart-define=USE_LAN=true --dart-define=LAN_HOST=${LAN_HOST:-192.168.1.76}",
     "dev:frontend": "npm run dev:ios-device",
     "dev:all:simulator": "npx concurrently \"npm run dev:backend\" \"npm run dev:ios-simulator\"",
     "dev:all:device": "npx concurrently \"npm run dev:backend\" \"npm run dev:ios-device\""

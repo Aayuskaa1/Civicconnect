@@ -1,5 +1,6 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:uuid/uuid.dart';
+import 'package:civic_connect/core/api/api_endpoints.dart';
 import 'package:civic_connect/features/auth/domain/entities/auth_entity.dart';
 
 part 'auth_hive_model.g.dart';
@@ -56,7 +57,7 @@ class AuthHiveModel extends HiveObject {
       fullName: fullName,
       username: username,
       password: password,
-      profilePicture: profilePicture,
+      profilePicture: ApiEndpoints.resolveMediaUrl(profilePicture),
       role: role,
     );
   }

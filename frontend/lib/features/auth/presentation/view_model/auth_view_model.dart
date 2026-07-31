@@ -212,8 +212,9 @@ class AuthViewModel extends Notifier<AuthState> {
             if (data != null) {
               resolvedUsername = data['username'] as String? ?? resolvedUsername;
               resolvedRole = data['role'] as String? ?? resolvedRole;
-              resolvedProfilePicture =
-                  data['profilePicture'] as String? ?? resolvedProfilePicture;
+              resolvedProfilePicture = ApiEndpoints.resolveMediaUrl(
+                    data['profilePicture'] as String? ?? resolvedProfilePicture,
+                  );
             }
           }
         } catch (_) {

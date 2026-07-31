@@ -12,5 +12,12 @@ import UIKit
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+
+    // UIKit Adaptive Brightness bridge (system brightness observer — not lux).
+    if let registrar = engineBridge.pluginRegistry.registrar(
+      forPlugin: "AdaptiveBrightnessPlugin"
+    ) {
+      AdaptiveBrightnessPlugin.register(with: registrar)
+    }
   }
 }

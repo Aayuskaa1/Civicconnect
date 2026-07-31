@@ -6,7 +6,7 @@ console.log('[boot] env loaded, importing app...');
 import app from './src/app';
 import { connectDB } from './src/configs/db.config';
 
-const PORT = Number(process.env.PORT) || 3000;
+const PORT = Number(process.env.PORT) || 3001;
 
 const startServer = async () => {
   try {
